@@ -52,6 +52,7 @@ export class TouchControls {
     element.addEventListener("touchend", this.handleEnd, { passive: false });
 
     this.createToggleButton();
+    this.showButtons(); // Show buttons by default on touch devices
   }
 
   // --- Gesture handlers ---
@@ -177,7 +178,7 @@ export class TouchControls {
 
     overlay.appendChild(leftGroup);
     overlay.appendChild(rightGroup);
-    this.element.appendChild(overlay);
+    document.body.appendChild(overlay);
     return overlay;
   }
 
