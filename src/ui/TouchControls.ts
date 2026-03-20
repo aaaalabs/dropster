@@ -21,8 +21,6 @@ export class TouchControls {
   private callbacks: TouchCallbacks;
   private element: HTMLElement;
   private overlay: HTMLElement | null = null;
-  private toggleBtn: HTMLElement | null = null;
-  private buttonsVisible = false;
 
   // Gesture tracking
   private touchStartX = 0;
@@ -51,8 +49,7 @@ export class TouchControls {
     element.addEventListener("touchmove", this.handleMove, { passive: false });
     element.addEventListener("touchend", this.handleEnd, { passive: false });
 
-    this.createToggleButton();
-    this.showButtons(); // Show buttons by default on touch devices
+    this.showButtons();
   }
 
   // --- Gesture handlers ---
@@ -125,28 +122,6 @@ export class TouchControls {
   }
 
   // --- Virtual buttons ---
-
-  private createToggleButton(): void {
-    const btn = document.createElement("button");
-    btn.textContent = "🎮";
-    Object.assign(btn.style, {
-      position: "fixed",
-      bottom: "8px",
-      right: "8px",
-      zIndex: "1000",
-      background: "rgba(0,0,0,0.6)",
-      color: "#fff",
-      border: "none",
-      borderRadius: "8px",
-      padding: "8px 10px",
-      fontSize: "18px",
-      cursor: "pointer",
-      touchAction: "none",
-    });
-    btn.addEventListener("touchstart", (e) => { e.stopPropagation(); e.preventDefault(); this.toggleButtons(); }, { passive: false });
-    document.body.appendChild(btn);
-    this.toggleBtn = btn;
-  }
 
   private createOverlay(): HTMLElement {
     const overlay = document.createElement("div");
@@ -233,17 +208,10 @@ export class TouchControls {
   showButtons(): void {
     if (!this.overlay) this.overlay = this.createOverlay();
     this.overlay.style.display = "flex";
-    this.buttonsVisible = true;
   }
 
   hideButtons(): void {
     if (this.overlay) this.overlay.style.display = "none";
-    this.buttonsVisible = false;
-  }
-
-  toggleButtons(): void {
-    if (this.buttonsVisible) this.hideButtons();
-    else this.showButtons();
   }
 
   destroy(): void {
@@ -252,6 +220,5 @@ export class TouchControls {
     this.element.removeEventListener("touchmove", this.handleMove);
     this.element.removeEventListener("touchend", this.handleEnd);
     if (this.overlay) this.overlay.remove();
-    if (this.toggleBtn) this.toggleBtn.remove();
   }
 }
