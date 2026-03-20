@@ -64,7 +64,11 @@ export class GameScreen {
     this.sound = new SoundEngine();
 
     this.engine.onGarbage = (lines) => this.onSendGarbage?.(lines);
-    this.engine.onGameOver = () => this.onGameOver?.();
+    this.engine.onGameOver = () => {
+      this.sound.gameOver();
+      setTimeout(() => this.sound.stopAll(), 1000);
+      this.onGameOver?.();
+    };
     this.engine.onLineClear = (count, rows) => {
       this.sound.lineClear(count);
       this.flashRows = rows;
@@ -149,6 +153,7 @@ export class GameScreen {
     cancelAnimationFrame(this.animFrameId);
     this.removeInput();
     this.touch.destroy();
+    this.sound.stopAll();
     this.muteBtn.remove();
     window.removeEventListener("resize", this.resize);
     this.canvas.remove();

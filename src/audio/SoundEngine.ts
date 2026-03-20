@@ -139,6 +139,13 @@ export class SoundEngine {
     this.osc('square', 220, 0.15, 0.001, 0.6, t + 0.1, 55);
   }
 
+  stopAll(): void {
+    if (this.ctx) {
+      this.ctx.close();
+      this.ctx = null;
+    }
+  }
+
   countdown(): void {
     if (this._muted) return;
     const t = this.getCtx().currentTime;
