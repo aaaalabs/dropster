@@ -108,7 +108,7 @@ export class Renderer {
     y: number
   ): void {
     this.ctx.fillStyle = "#ccc";
-    this.ctx.font = "14px monospace";
+    this.ctx.font = "11px Orbitron, monospace";
     this.ctx.fillText(label, x, y);
 
     const pieceType = type as keyof typeof PIECE_COLORS;
@@ -147,7 +147,7 @@ export class Renderer {
       }
     }
 
-    this.ctx.strokeStyle = "#333";
+    this.ctx.strokeStyle = "rgba(0, 240, 240, 0.12)";
     this.ctx.lineWidth = 1;
     this.ctx.strokeRect(offsetX, offsetY, w, h);
   }
@@ -162,30 +162,38 @@ export class Renderer {
     const barHeight = height / maxBars;
     const bars = Math.min(pending, maxBars);
 
-    this.ctx.fillStyle = "#333";
-    this.ctx.fillRect(x, y, 10, height);
+    this.ctx.fillStyle = "#12122a";
+    this.ctx.fillRect(x, y, 8, height);
 
-    this.ctx.fillStyle = "#ff3333";
+    this.ctx.shadowBlur = 8;
+    this.ctx.shadowColor = "#ff00aa";
+    this.ctx.fillStyle = "#ff00aa";
     for (let i = 0; i < bars; i++) {
-      this.ctx.fillRect(x, y + height - (i + 1) * barHeight, 10, barHeight - 1);
+      this.ctx.fillRect(x, y + height - (i + 1) * barHeight, 8, barHeight - 1);
     }
+    this.ctx.shadowBlur = 0;
+    this.ctx.shadowColor = "transparent";
   }
 
   drawScore(score: number, combo: number, x: number, y: number): void {
-    this.ctx.fillStyle = "#ccc";
-    this.ctx.font = "14px monospace";
-    this.ctx.fillText(`Score: ${score}`, x, y);
+    this.ctx.fillStyle = "#4a4a6a";
+    this.ctx.font = "10px Orbitron, monospace";
+    this.ctx.fillText("SCORE", x, y);
+    this.ctx.fillStyle = "#fff";
+    this.ctx.font = "bold 14px Orbitron, monospace";
+    this.ctx.fillText(score.toLocaleString(), x, y + 18);
     if (combo > 1) {
-      this.ctx.fillStyle = "#ffaa00";
-      this.ctx.fillText(`Combo x${combo}`, x, y + 20);
+      this.ctx.fillStyle = "#ff00aa";
+      this.ctx.font = "bold 12px Orbitron, monospace";
+      this.ctx.fillText(`×${combo}`, x, y + 36);
     }
   }
 
   drawCountdown(count: number): void {
     this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    this.ctx.fillStyle = "#fff";
-    this.ctx.font = "bold 72px monospace";
+    this.ctx.fillStyle = "#00f0f0";
+    this.ctx.font = "bold 72px Orbitron, monospace";
     this.ctx.textAlign = "center";
     this.ctx.fillText(
       count > 0 ? String(count) : "GO!",

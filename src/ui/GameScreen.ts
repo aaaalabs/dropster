@@ -203,7 +203,7 @@ export class GameScreen {
 
     this.renderer.drawText("DROPSTER", 10, 24, {
       color: "#00f0f0",
-      font: "bold 20px monospace",
+      font: "bold 16px Orbitron, monospace",
     });
 
     this.renderer.drawBoard(this.engine.board.grid, BOARD_OFFSET_X, BOARD_OFFSET_Y);
@@ -358,21 +358,9 @@ export class GameScreen {
 
   private createMuteButton(parent: HTMLElement): HTMLElement {
     const btn = document.createElement("button");
+    btn.className = "mute-btn";
     const update = (): void => { btn.textContent = this.sound.muted ? "\uD83D\uDD07" : "\uD83D\uDD0A"; };
     update();
-    Object.assign(btn.style, {
-      position: "absolute",
-      top: "4px",
-      right: "4px",
-      zIndex: "10",
-      background: "rgba(0,0,0,0.5)",
-      color: "#fff",
-      border: "none",
-      borderRadius: "6px",
-      padding: "4px 8px",
-      fontSize: "16px",
-      cursor: "pointer",
-    });
     btn.addEventListener("click", () => {
       this.sound.toggleMute();
       update();

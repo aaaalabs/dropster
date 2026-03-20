@@ -11,27 +11,22 @@ export class LobbyScreen {
     this.container = document.createElement("div");
     this.container.id = "lobby";
     this.container.innerHTML = `
-      <div style="text-align:center; padding:clamp(20px,5vw,40px); max-width:100vw; box-sizing:border-box;">
-        <h1 style="font-size:clamp(32px,8vw,48px); margin-bottom:8px; color:#00f0f0;">DROPSTER</h1>
-        <p style="color:#666; margin-bottom:clamp(20px,5vw,40px);">1v1 Competitive Tetris</p>
-        <div style="display:flex; flex-direction:column; gap:16px; max-width:min(300px,90vw); margin:0 auto;">
-          <button id="btn-create" style="padding:16px; font-size:18px; background:#00f0f0; color:#000; border:none; cursor:pointer; font-weight:bold;">
-            Create Room
-          </button>
-          <div style="display:flex; gap:8px;">
-            <input id="input-code" type="text" maxlength="4" placeholder="Room Code"
-              style="flex:1; padding:16px; font-size:18px; background:#1a1a2e; color:#fff; border:1px solid #333; text-transform:uppercase; text-align:center; font-family:monospace;" />
-            <button id="btn-join" style="padding:16px 24px; font-size:18px; background:#a000f0; color:#fff; border:none; cursor:pointer; font-weight:bold;">
-              Join
-            </button>
+      <div class="lobby">
+        <h1 class="lobby-title">DROPSTER</h1>
+        <p class="lobby-subtitle">Block Battle Arena</p>
+        <div class="lobby-actions">
+          <button id="btn-create" class="lobby-btn btn-primary">Create Room</button>
+          <div class="join-row">
+            <input id="input-code" class="code-input" type="text" maxlength="4" placeholder="CODE" autocomplete="off" />
+            <button id="btn-join" class="lobby-btn btn-secondary">Join</button>
           </div>
-          <div style="border-top:1px solid #333; margin-top:8px; padding-top:8px;">
-            <button id="btn-solo" style="padding:16px; width:100%; font-size:18px; background:#333; color:#fff; border:none; cursor:pointer; font-weight:bold;">
-              Solo
-            </button>
-          </div>
+          <div class="divider"></div>
+          <button id="btn-solo" class="lobby-btn btn-ghost">Solo Practice</button>
         </div>
-        <p id="lobby-status" style="margin-top:24px; color:#666; padding:0 16px;"></p>
+        <div id="lobby-status" class="lobby-status"></div>
+        <div class="controls-hint">
+          <p>← → Move &nbsp; ↑ Rotate &nbsp; Space Drop &nbsp; C Hold &nbsp; Esc Quit</p>
+        </div>
       </div>
     `;
     parent.appendChild(this.container);
@@ -43,15 +38,34 @@ export class LobbyScreen {
       const code = input.value.trim().toUpperCase();
       if (code.length === 4) callbacks.onJoinRoom(code);
     });
+
+    // Enter key joins room
+    this.container.querySelector("#input-code")!.addEventListener("keydown", (e) => {
+      if ((e as KeyboardEvent).key === "Enter") {
+        const input = this.container.querySelector("#input-code") as HTMLInputElement;
+        const code = input.value.trim().toUpperCase();
+        if (code.length === 4) callbacks.onJoinRoom(code);
+      }
+    });
   }
 
   setStatus(text: string): void {
     const el = this.container.querySelector("#lobby-status") as HTMLElement;
-    if (el) el.textContent = text;
+    if (el) {
+      el.textContent = text;
+      el.classList.remove("has-code");
+    }
   }
 
   showRoomCode(code: string): void {
-    this.setStatus(`Room Code: ${code} — Share this with your opponent!`);
+    const el = this.container.querySelector("#lobby-status") as HTMLElement;
+    if (el) {
+      el.classList.add("has-code");
+      el.innerHTML = `
+        Share this code with your opponent
+        <div class="room-code-display">${code}</div>
+      `;
+    }
   }
 
   destroy(): void {
