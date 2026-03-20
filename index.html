@@ -97,7 +97,7 @@
 
     .lobby-title {
       font-family: var(--font-display);
-      font-size: clamp(40px, 10vw, 72px);
+      font-size: clamp(32px, 8vw, 52px);
       font-weight: 900;
       letter-spacing: 0.15em;
       color: var(--cyan);
@@ -137,16 +137,16 @@
     .lobby-actions {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      max-width: min(340px, 88vw);
+      gap: 10px;
+      max-width: min(280px, 85vw);
       margin: 0 auto;
     }
 
     .lobby-btn {
       position: relative;
-      padding: 18px 24px;
+      padding: 14px 20px;
       font-family: var(--font-display);
-      font-size: 15px;
+      font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -154,6 +154,7 @@
       cursor: pointer;
       transition: all 0.2s ease;
       overflow: hidden;
+      white-space: nowrap;
     }
 
     .lobby-btn::before {
@@ -215,11 +216,12 @@
 
     .code-input {
       flex: 1;
-      padding: 18px;
+      min-width: 0;
+      padding: 14px;
       font-family: var(--font-display);
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
-      letter-spacing: 0.4em;
+      letter-spacing: 0.3em;
       text-align: center;
       text-transform: uppercase;
       background: var(--surface);
