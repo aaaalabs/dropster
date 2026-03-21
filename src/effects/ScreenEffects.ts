@@ -15,10 +15,31 @@ interface Flash {
   duration: number;
 }
 
+interface Trail {
+  x: number;
+  y1: number;
+  y2: number;
+  color: string;
+  width: number;
+  startTime: number;
+  duration: number;
+}
+
+interface ImpactLine {
+  x: number;
+  y: number;
+  width: number;
+  color: string;
+  startTime: number;
+  duration: number;
+}
+
 export class ScreenEffects {
   private popups: TextPopup[] = [];
   private flash: Flash | null = null;
   private dangerLevel = 0;
+  private trails: Trail[] = [];
+  private impactLines: ImpactLine[] = [];
 
   flashScreen(color: string, durationMs: number): void {
     this.flash = { color, startTime: performance.now(), duration: durationMs };
@@ -42,6 +63,14 @@ export class ScreenEffects {
 
   setDanger(level: number): void {
     this.dangerLevel = Math.max(0, Math.min(1, level));
+  }
+
+  addTrail(x: number, y1: number, y2: number, color: string, width: number, duration: number): void {
+    this.trails.push({ x, y1, y2, color, width, startTime: performance.now(), duration });
+  }
+
+  addImpactLine(x: number, y: number, width: number, color: string, duration: number): void {
+    this.impactLines.push({ x, y, width, color, startTime: performance.now(), duration });
   }
 
   draw(ctx: CanvasRenderingContext2D, now: number, boardX: number, boardY: number, boardW: number, boardH: number): void {
@@ -91,6 +120,40 @@ export class ScreenEffects {
 
       ctx.restore();
     }
+
+    // Trails
+    this.trails = this.trails.filter((t) => {
+      const remaining = t.duration - (now - t.startTime);
+      if (remaining <= 0) return false;
+      ctx.save();
+      ctx.globalAlpha = (remaining / t.duration) * 0.6;
+      ctx.fillStyle = t.color;
+      ctx.fillRect(t.x - t.width / 2, t.y1, t.width, t.y2 - t.y1);
+      ctx.restore();
+      return true;
+    });
+
+    // Impact lines
+    this.impactLines = this.impactLines.filter((il) => {
+      const elapsed = now - il.startTime;
+      const remaining = il.duration - elapsed;
+      if (remaining <= 0) return false;
+      const progress = elapsed / il.duration;
+      const scale = progress < 0.2 ? 1 + progress * 0.5 : 1.1 - (progress - 0.2) * 0.125;
+      const w = il.width * scale;
+      ctx.save();
+      ctx.globalAlpha = remaining / il.duration;
+      ctx.shadowColor = il.color;
+      ctx.shadowBlur = 16;
+      ctx.strokeStyle = il.color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(il.x - w / 2, il.y);
+      ctx.lineTo(il.x + w / 2, il.y);
+      ctx.stroke();
+      ctx.restore();
+      return true;
+    });
 
     // Text popups
     this.popups = this.popups.filter((p) => {

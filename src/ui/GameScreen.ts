@@ -84,17 +84,18 @@ export class GameScreen {
       for (const row of rows) {
         const y = BOARD_OFFSET_Y + row * CELL_SIZE + CELL_SIZE / 2;
         const x = BOARD_OFFSET_X + (COLS * CELL_SIZE) / 2;
-        this.particles.burstRow(x, y, COLS * CELL_SIZE, count === 4 ? 20 : 8, {
+        this.particles.burstRow(x, y, COLS * CELL_SIZE, count === 4 ? 30 : 15, {
           color: count === 4 ? "#00f0f0" : "#fff",
-          speed: count === 4 ? 5 : 3,
-          life: count === 4 ? 35 : 25,
-          gravity: 0.1,
+          speed: count === 4 ? 6 : 4,
+          life: count === 4 ? 60 : 45,
+          size: 4,
+          gravity: 0.08,
         });
       }
 
       // Screen flash for tetris
       if (count === 4) {
-        this.effects.flashScreen("#fff", 100);
+        this.effects.flashScreen("#fff", 200);
       }
 
       // Score popup
@@ -103,8 +104,9 @@ export class GameScreen {
       const pts = scores[scoreKey as keyof typeof scores] || 0;
       this.effects.addPopup(`+${pts}`, BOARD_OFFSET_X + 140, BOARD_OFFSET_Y + rows[0] * CELL_SIZE, {
         color: "#fff",
-        font: "bold 14px Orbitron, monospace",
-        duration: 800,
+        font: "bold 16px Orbitron, monospace",
+        duration: 1500,
+        vy: -0.8,
       });
 
       // Combo particles
@@ -119,7 +121,8 @@ export class GameScreen {
           this.effects.addPopup(`COMBO \u00d7${this.engine.combo}`, BOARD_OFFSET_X + 140, BOARD_OFFSET_Y + 50, {
             color: "#ff00aa",
             font: "bold 16px Orbitron, monospace",
-            duration: 1000,
+            duration: 1500,
+            vy: -0.8,
           });
         }
       }
@@ -132,16 +135,16 @@ export class GameScreen {
       if (event === "tetris") {
         this.effects.addPopup("TETRIS!", centerX, centerY, {
           color: "#00f0f0",
-          font: "bold 28px Orbitron, monospace",
-          duration: 1500,
-          vy: -1,
+          font: "bold 32px Orbitron, monospace",
+          duration: 2000,
+          vy: -0.5,
         });
       }
       if (event === "back-to-back") {
         this.effects.addPopup("BACK TO BACK!", centerX, centerY - 40, {
           color: "#ffd700",
           font: "bold 20px Orbitron, monospace",
-          duration: 1500,
+          duration: 2000,
           vy: -0.8,
         });
       }
@@ -149,7 +152,8 @@ export class GameScreen {
         this.effects.addPopup(`LEVEL ${this.engine.level + 1}`, centerX, centerY, {
           color: "#a855f7",
           font: "bold 18px Orbitron, monospace",
-          duration: 1200,
+          duration: 1800,
+          vy: -0.8,
         });
         this.music.setLevel(this.engine.level);
       }
@@ -160,10 +164,29 @@ export class GameScreen {
       onMoveRight: () => { this.engine.moveRight(); this.sound.move(); },
       onSoftDrop: () => { this.engine.softDrop(); this.sound.softDrop(); },
       onHardDrop: () => {
+        const piece = this.engine.currentPiece;
+        const ghostY = this.engine.board.getGhostY(piece);
+        const blocks = piece.getBlocks();
+        const minX = Math.min(...blocks.map(b => b.x));
+        const maxX = Math.max(...blocks.map(b => b.x));
+        const startY = Math.min(...blocks.map(b => b.y));
+        const centerX = BOARD_OFFSET_X + ((minX + maxX + 1) / 2) * CELL_SIZE;
+        const trailTopY = BOARD_OFFSET_Y + startY * CELL_SIZE;
+        const impactY = BOARD_OFFSET_Y + (ghostY + 1) * CELL_SIZE;
         this.engine.hardDrop();
         this.sound.hardDrop();
         this.lastGravityDrop = performance.now();
-        this.effects.flashScreen("rgba(0,240,240,0.15)", 50);
+        this.effects.addTrail(centerX, trailTopY, impactY, "#00f0f0", CELL_SIZE * (maxX - minX + 1), 400);
+        this.effects.addImpactLine(centerX, impactY, COLS * CELL_SIZE * 0.6, "#00f0f0", 500);
+        this.particles.burst(centerX, impactY, 16, {
+          color: "#00f0f0",
+          speed: 4,
+          spread: Math.PI,
+          baseAngle: -Math.PI / 2,
+          life: 30,
+          size: 3,
+          gravity: 0.15,
+        });
       },
       onRotateCW: () => { this.engine.rotateCW(); this.sound.rotate(); },
       onRotateCCW: () => { this.engine.rotateCCW(); this.sound.rotate(); },
@@ -207,7 +230,7 @@ export class GameScreen {
     this.engine.receiveGarbage(lines);
     this.shakeTimer = 150;
     this.sound.garbageReceived();
-    this.effects.flashScreen("#ff000060", 80);
+    this.effects.flashScreen("#ff000060", 150);
     // Particles burst from bottom
     const bottomY = BOARD_OFFSET_Y + ROWS * CELL_SIZE;
     this.particles.burst(BOARD_OFFSET_X + (COLS * CELL_SIZE) / 2, bottomY, 10, {
@@ -402,13 +425,33 @@ export class GameScreen {
         this.engine.holdPiece();
         this.sound.move();
         break;
-      case "Space":
+      case "Space": {
         e.preventDefault();
+        const piece = this.engine.currentPiece;
+        const ghostY = this.engine.board.getGhostY(piece);
+        const blocks = piece.getBlocks();
+        const minX = Math.min(...blocks.map(b => b.x));
+        const maxX = Math.max(...blocks.map(b => b.x));
+        const startY = Math.min(...blocks.map(b => b.y));
+        const centerX = BOARD_OFFSET_X + ((minX + maxX + 1) / 2) * CELL_SIZE;
+        const trailTopY = BOARD_OFFSET_Y + startY * CELL_SIZE;
+        const impactY = BOARD_OFFSET_Y + (ghostY + 1) * CELL_SIZE;
         this.engine.hardDrop();
         this.sound.hardDrop();
         this.lastGravityDrop = performance.now();
-        this.effects.flashScreen("rgba(0,240,240,0.15)", 50);
+        this.effects.addTrail(centerX, trailTopY, impactY, "#00f0f0", CELL_SIZE * (maxX - minX + 1), 400);
+        this.effects.addImpactLine(centerX, impactY, COLS * CELL_SIZE * 0.6, "#00f0f0", 500);
+        this.particles.burst(centerX, impactY, 16, {
+          color: "#00f0f0",
+          speed: 4,
+          spread: Math.PI,
+          baseAngle: -Math.PI / 2,
+          life: 30,
+          size: 3,
+          gravity: 0.15,
+        });
         break;
+      }
       case "Escape":
         this.onQuit?.();
         break;
