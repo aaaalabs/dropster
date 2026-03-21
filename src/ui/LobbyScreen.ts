@@ -208,11 +208,10 @@ export class LobbyScreen {
       } else {
         el.disabled = false;
         el.style.cursor = "pointer";
-        el.style.opacity = active ? "1" : "0.5";
+        el.style.opacity = active ? "1" : isOnline ? "0.8" : "0.5";
         el.style.borderColor = active ? "var(--cyan)" : "rgba(255,255,255,0.08)";
-        el.style.color = active ? "var(--cyan)" : "var(--text-mid)";
-        const dot = isOnline && !active ? `<span style="color:#00ff88; font-size:8px;">●</span> ` : "";
-        el.innerHTML = `${dot}${name}`;
+        el.style.color = active ? "var(--cyan)" : isOnline ? "#00ff88" : "var(--text-mid)";
+        el.textContent = name;
       }
     });
   }
