@@ -4,6 +4,7 @@ import { Redis } from "@upstash/redis";
 const SCORES_KEY = "dropster:scores";
 const ACTIVITY_KEY = "dropster:activity";
 const PLAYING_KEY = "dropster:playing"; // hash: player → timestamp
+const ONLINE_KEY = "dropster:online";  // hash: player → timestamp
 const CHALLENGE_KEY = "dropster:challenge"; // hash: player → peerId
 const MAX_ACTIVITY = 20;
 const PLAYING_TTL = 15; // seconds — must heartbeat within this
@@ -29,10 +30,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // GET: fetch leaderboard + activity + who's playing
   if (req.method === "GET") {
-    const [scores, activity, playing, challenges] = await Promise.all([
+    const [scores, activity, playing, online, challenges] = await Promise.all([
       r.hgetall(SCORES_KEY) as Promise<Record<string, string> | null>,
       r.lrange(ACTIVITY_KEY, 0, MAX_ACTIVITY - 1) as Promise<string[]>,
       r.hgetall(PLAYING_KEY) as Promise<Record<string, string> | null>,
+      r.hgetall(ONLINE_KEY) as Promise<Record<string, string> | null>,
       r.hgetall(CHALLENGE_KEY) as Promise<Record<string, string> | null>,
     ]);
 
@@ -45,11 +47,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .filter(([_, ts]) => now - parseInt(String(ts), 10) < PLAYING_TTL * 1000)
       .map(([name]) => name);
 
-    // challenges: { playerName: peerId }
+    const onlinePlayers = Object.entries(online ?? {})
+      .filter(([_, ts]) => now - parseInt(String(ts), 10) < PLAYING_TTL * 1000)
+      .map(([name]) => name);
+
     const waiting = Object.entries(challenges ?? {})
       .map(([name, peerId]) => ({ name, peerId: String(peerId) }));
 
-    return res.json({ leaderboard, activity: activity ?? [], playing: activePlayers, challenges: waiting });
+    return res.json({ leaderboard, activity: activity ?? [], playing: activePlayers, online: onlinePlayers, challenges: waiting });
   }
 
   // POST: submit score / set playing status
@@ -58,6 +63,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!player || typeof player !== "string") {
       return res.status(400).json({ error: "player required" });
+    }
+
+    // Heartbeat: mark player as online (in lobby)
+    if (action === "online") {
+      await r.hset(ONLINE_KEY, { [player]: Date.now() });
+      return res.json({ ok: true });
+    }
+
+    // Go offline
+    if (action === "offline") {
+      await r.hdel(ONLINE_KEY, player);
+      return res.json({ ok: true });
     }
 
     // Heartbeat: mark player as playing

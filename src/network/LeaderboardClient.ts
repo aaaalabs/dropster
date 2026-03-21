@@ -19,6 +19,7 @@ interface LeaderboardData {
   leaderboard: LeaderboardEntry[];
   activity: ActivityEntry[];
   playing: string[];
+  online: string[];
   challenges: ChallengeEntry[];
 }
 
@@ -30,7 +31,7 @@ export class LeaderboardClient {
       const res = await window.fetch("/api/leaderboard");
       return await res.json();
     } catch {
-      return { leaderboard: [], activity: [], playing: [], challenges: [] };
+      return { leaderboard: [], activity: [], playing: [], online: [], challenges: [] };
     }
   }
 
@@ -52,6 +53,21 @@ export class LeaderboardClient {
         body: JSON.stringify({ player, event, score }),
       });
     } catch { /* silent fail */ }
+  }
+
+  startOnline(player: string): void {
+    this.post({ player, action: "online" });
+    this.heartbeatId = setInterval(() => {
+      this.post({ player, action: "online" });
+    }, 10000);
+  }
+
+  stopOnline(player: string): void {
+    if (this.heartbeatId) {
+      clearInterval(this.heartbeatId);
+      this.heartbeatId = null;
+    }
+    this.post({ player, action: "offline" });
   }
 
   startPlaying(player: string): void {

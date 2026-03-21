@@ -10,6 +10,7 @@ export class LobbyScreen {
   private container: HTMLDivElement;
   private lb = new LeaderboardClient();
   private activePlayers: string[] = [];
+  private onlinePlayers: string[] = [];
   private challenges: { name: string; peerId: string }[] = [];
   private pollId: ReturnType<typeof setInterval> | null = null;
   private callbacks: LobbyCallbacks;
@@ -69,8 +70,11 @@ export class LobbyScreen {
       btn.addEventListener("click", () => {
         const el = btn as HTMLButtonElement;
         if (el.disabled) return;
+        const oldPlayer = this.selectedPlayer;
         this.selectedPlayer = el.dataset.player ?? "Leander";
         localStorage.setItem("dropster-player", this.selectedPlayer);
+        this.lb.stopOnline(oldPlayer);
+        this.lb.startOnline(this.selectedPlayer);
         this.updatePlayerButtons(playerBtns);
         this.showHighScores();
       });
@@ -87,6 +91,7 @@ export class LobbyScreen {
     });
 
     this.showHighScores();
+    this.lb.startOnline(this.selectedPlayer);
 
     // Poll for active players + challenges every 3s
     this.poll();
@@ -143,6 +148,7 @@ export class LobbyScreen {
   private poll(): void {
     this.lb.fetch().then(data => {
       this.activePlayers = data.playing ?? [];
+      this.onlinePlayers = data.online ?? [];
       this.challenges = (data.challenges ?? []).filter(c => c.name !== this.selectedPlayer);
       const playerBtns = this.container.querySelectorAll("#player-selector button");
       this.updatePlayerButtons(playerBtns);
@@ -190,6 +196,8 @@ export class LobbyScreen {
       const active = name === this.selectedPlayer;
       const playing = this.activePlayers.includes(name);
 
+      const isOnline = this.onlinePlayers.includes(name);
+
       if (playing && !active) {
         el.style.opacity = "0.3";
         el.style.borderColor = "#00ff88";
@@ -203,7 +211,8 @@ export class LobbyScreen {
         el.style.opacity = active ? "1" : "0.5";
         el.style.borderColor = active ? "var(--cyan)" : "rgba(255,255,255,0.08)";
         el.style.color = active ? "var(--cyan)" : "var(--text-mid)";
-        el.textContent = name;
+        const dot = isOnline && !active ? `<span style="color:#00ff88; font-size:8px;">●</span> ` : "";
+        el.innerHTML = `${dot}${name}`;
       }
     });
   }
@@ -249,6 +258,7 @@ export class LobbyScreen {
 
   destroy(): void {
     if (this.pollId) clearInterval(this.pollId);
+    this.lb.stopOnline(this.selectedPlayer);
     this.container.remove();
   }
 }
