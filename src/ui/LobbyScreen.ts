@@ -1,3 +1,5 @@
+import { LeaderboardClient } from "../network/LeaderboardClient";
+
 export interface LobbyCallbacks {
   onCreateRoom: () => void;
   onJoinRoom: (code: string) => void;
@@ -7,6 +9,7 @@ export interface LobbyCallbacks {
 
 export class LobbyScreen {
   private container: HTMLDivElement;
+  private lb = new LeaderboardClient();
   selectedDifficulty = "normal";
   selectedPlayer: string;
 
@@ -25,10 +28,10 @@ export class LobbyScreen {
             <button id="btn-join" class="lobby-btn btn-secondary">Join</button>
           </div>
           <div id="player-selector" style="display:flex; gap:6px; justify-content:center;">
-            <button data-player="Leander" class="lobby-btn btn-ghost" style="flex:1; padding:10px 0; font-size:11px; border-color:var(--cyan); color:var(--cyan); opacity:1;">Leander</button>
-            <button data-player="Finn" class="lobby-btn btn-ghost" style="flex:1; padding:10px 0; font-size:11px; opacity:0.5;">Finn</button>
-            <button data-player="Mama" class="lobby-btn btn-ghost" style="flex:1; padding:10px 0; font-size:11px; opacity:0.5;">Mama</button>
-            <button data-player="Papa" class="lobby-btn btn-ghost" style="flex:1; padding:10px 0; font-size:11px; opacity:0.5;">Papa</button>
+            <button data-player="Leander" class="lobby-btn btn-ghost" style="flex:1; padding:10px 4px; font-size:9px; letter-spacing:0.05em; border-color:var(--cyan); color:var(--cyan); opacity:1;">Leander</button>
+            <button data-player="Finn" class="lobby-btn btn-ghost" style="flex:1; padding:10px 4px; font-size:9px; letter-spacing:0.05em; opacity:0.5;">Finn</button>
+            <button data-player="Mama" class="lobby-btn btn-ghost" style="flex:1; padding:10px 4px; font-size:9px; letter-spacing:0.05em; opacity:0.5;">Mama</button>
+            <button data-player="Papa" class="lobby-btn btn-ghost" style="flex:1; padding:10px 4px; font-size:9px; letter-spacing:0.05em; opacity:0.5;">Papa</button>
           </div>
           <div class="divider"></div>
           <div id="difficulty-selector" style="display:flex; gap:6px; justify-content:center;">
@@ -126,22 +129,65 @@ export class LobbyScreen {
   showHighScores(): void {
     const el = this.container.querySelector("#highscore-display");
     if (!el) return;
+
+    // Show local scores immediately
     const players = ["Leander", "Finn", "Mama", "Papa"];
-    const scores = players.map(p => {
+    const localScores = players.map(p => {
       const s = parseInt(localStorage.getItem(`dropster-highscore-${p}`) ?? "0", 10);
       return { name: p, score: s };
     }).filter(s => s.score > 0).sort((a, b) => b.score - a.score);
 
-    if (scores.length === 0) {
+    this.renderScores(el as HTMLElement, localScores);
+
+    // Then fetch from server and merge (server wins if higher)
+    this.lb.fetch().then(data => {
+      const merged = new Map<string, number>();
+      for (const s of localScores) merged.set(s.name, s.score);
+      for (const s of data.leaderboard) {
+        const current = merged.get(s.name) ?? 0;
+        merged.set(s.name, Math.max(current, s.score));
+      }
+      const scores = [...merged.entries()]
+        .map(([name, score]) => ({ name, score }))
+        .filter(s => s.score > 0)
+        .sort((a, b) => b.score - a.score);
+
+      this.renderScores(el as HTMLElement, scores, data.activity);
+    }).catch(() => {});
+  }
+
+  private renderScores(el: HTMLElement, scores: { name: string; score: number }[], activity?: { player: string; event: string; time: number }[]): void {
+    if (scores.length === 0 && !activity?.length) {
       el.innerHTML = "";
       return;
     }
 
-    el.innerHTML = scores.map((s, i) => {
-      const medal = i === 0 ? "👑" : "";
+    let html = scores.map((s, i) => {
+      const medal = i === 0 ? "👑&nbsp;" : "";
       const active = s.name === this.selectedPlayer ? "color:var(--cyan);" : "color:var(--text-mid);";
       return `<span style="${active} font-size:12px;">${medal}${s.name}: ${s.score.toLocaleString()}</span>`;
     }).join("&nbsp;&nbsp;");
+
+    if (activity && activity.length > 0) {
+      const recent = activity.slice(0, 3);
+      const lines = recent.map(a => {
+        const ago = this.timeAgo(a.time);
+        return `<span style="color:var(--text-dim); font-size:10px;">${a.player} — ${ago}</span>`;
+      }).join("&nbsp;&nbsp;");
+      html += `<div style="margin-top:6px;">${lines}</div>`;
+    }
+
+    el.innerHTML = html;
+  }
+
+  private timeAgo(timestamp: number): string {
+    const diff = Date.now() - timestamp;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
   }
 
   destroy(): void {

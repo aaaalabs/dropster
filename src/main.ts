@@ -1,4 +1,5 @@
 import { PeerConnection } from "./network/PeerConnection";
+import { LeaderboardClient } from "./network/LeaderboardClient";
 import { Message } from "./network/Protocol";
 import { MusicEngine } from "./audio/MusicEngine";
 import { LobbyScreen } from "./ui/LobbyScreen";
@@ -7,6 +8,7 @@ import { GameOverScreen } from "./ui/GameOverScreen";
 
 const app = document.getElementById("app")!;
 const lobbyMusic = new MusicEngine();
+const leaderboard = new LeaderboardClient();
 let lobbyMusicStarted = false;
 
 function ensureLobbyMusic(): void {
@@ -142,6 +144,9 @@ function startGame(): void {
   gameScreen.onPauseRequest = () => peer?.send({ type: "pause" });
   gameScreen.onQuit = () => {
     gameScreen?.saveHighScore();
+    const quitScore = gameScreen?.getScore() ?? 0;
+    const quitPlayer = player;
+    if (quitScore > 0) leaderboard.submitScore(quitPlayer, quitScore);
     gameScreen?.destroy();
     gameScreen = null;
     peer?.destroy();
@@ -158,6 +163,8 @@ function showGameOver(won: boolean): void {
   const score = gameScreen?.getScore() ?? 0;
   const isNewHighScore = gameScreen?.getIsNewHighScore() ?? false;
   const highScore = gameScreen?.getHighScore() ?? 0;
+  const currentPlayer = lobby?.selectedPlayer ?? localStorage.getItem("dropster-player") ?? "default";
+  if (score > 0) leaderboard.submitScore(currentPlayer, score);
   gameScreen?.destroy();
   gameScreen = null;
 
