@@ -139,7 +139,7 @@ export class LobbyScreen {
 
     this.renderScores(el as HTMLElement, localScores);
 
-    // Then fetch from server and merge (server wins if higher)
+    // Sync: push local scores up, pull server scores down, merge
     this.lb.fetch().then(data => {
       const merged = new Map<string, number>();
       for (const s of localScores) merged.set(s.name, s.score);
@@ -147,6 +147,20 @@ export class LobbyScreen {
         const current = merged.get(s.name) ?? 0;
         merged.set(s.name, Math.max(current, s.score));
       }
+
+      // Push local scores that are higher than server
+      for (const [name, score] of merged) {
+        const serverScore = data.leaderboard.find(s => s.name === name)?.score ?? 0;
+        if (score > serverScore && score > 0) {
+          this.lb.submitScore(name, score);
+        }
+        // Update localStorage if server has higher
+        const localScore = parseInt(localStorage.getItem(`dropster-highscore-${name}`) ?? "0", 10);
+        if (score > localScore) {
+          localStorage.setItem(`dropster-highscore-${name}`, String(score));
+        }
+      }
+
       const scores = [...merged.entries()]
         .map(([name, score]) => ({ name, score }))
         .filter(s => s.score > 0)
