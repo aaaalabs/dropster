@@ -26,6 +26,7 @@ let gameOverScreen: GameOverScreen | null = null;
 let peer: PeerConnection | null = null;
 let disconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let currentPlayer = "default";
+let opponentName = "";
 
 function showLobby(): void {
   cleanup();
@@ -38,6 +39,7 @@ function showLobby(): void {
 
 function handleSolo(): void {
   ensureLobbyMusic();
+  opponentName = "";
   startGame();
 }
 
@@ -66,6 +68,7 @@ async function handleChallenge(): Promise<void> {
 async function handleAcceptChallenge(opponent: string): Promise<void> {
   ensureLobbyMusic();
   currentPlayer = lobby?.selectedPlayer ?? "default";
+  opponentName = opponent;
 
   // Get opponent's peerId from Redis, connect via PeerJS
   const opponentPeerId = await leaderboard.acceptChallenge(currentPlayer, opponent);
@@ -138,7 +141,7 @@ function startGame(): void {
   lobby?.destroy();
   lobby = null;
 
-  gameScreen = new GameScreen(app, difficulty, player);
+  gameScreen = new GameScreen(app, difficulty, player, opponentName);
   leaderboard.startPlaying(player);
 
   gameScreen.onSendGarbage = (lines) => peer?.send({ type: "garbage", lines });
