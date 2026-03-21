@@ -57,7 +57,10 @@ export class LobbyScreen {
 
     this.container.querySelector("#btn-solo")!.addEventListener("click", callbacks.onSolo);
     this.container.querySelector("#btn-challenge")!.addEventListener("click", () => {
-      if (this.isWaiting) return;
+      if (this.isWaiting) {
+        this.cancelWaiting();
+        return;
+      }
       this.isWaiting = true;
       this.updateChallengeButton();
       callbacks.onChallenge();
