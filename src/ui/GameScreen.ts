@@ -328,6 +328,10 @@ export class GameScreen {
     return this.engine.currentHighScore;
   }
 
+  saveHighScore(): void {
+    this.engine.saveHighScore();
+  }
+
   requestPause(): boolean {
     if (this.pausesUsed >= 2) return false;
     this.pausesUsed++;

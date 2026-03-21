@@ -275,13 +275,19 @@ export class GameEngine {
     return Math.floor((COLS - width) / 2);
   }
 
-  private triggerGameOver(): void {
-    this.gameOver = true;
+  saveHighScore(): void {
     if (this.score > this.highScore) {
       this.highScore = this.score;
       this.localStorageSet("dropster-highscore", String(this.score));
+    }
+  }
+
+  private triggerGameOver(): void {
+    this.gameOver = true;
+    if (this.score > this.highScore) {
       this.onSpecialEvent?.("new-highscore");
     }
+    this.saveHighScore();
     this.onGameOver?.();
   }
 }

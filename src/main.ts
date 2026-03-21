@@ -139,6 +139,7 @@ function startGame(): void {
   };
   gameScreen.onPauseRequest = () => peer?.send({ type: "pause" });
   gameScreen.onQuit = () => {
+    gameScreen?.saveHighScore();
     gameScreen?.destroy();
     gameScreen = null;
     peer?.destroy();
