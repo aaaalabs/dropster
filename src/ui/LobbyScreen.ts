@@ -232,30 +232,14 @@ export class LobbyScreen {
   private renderScores(el: HTMLElement, scores: { name: string; score: number }[], activity?: { player: string; event: string; time: number }[]): void {
     if (scores.length === 0 && !activity?.length) { el.innerHTML = ""; return; }
 
-    let html = scores.map((s, i) => {
-      const medal = i === 0 ? "👑&nbsp;" : "";
+    let html = `<div style="display:flex; flex-direction:column; gap:4px; align-items:center;">`;
+    html += scores.map((s, i) => {
+      const medal = i === 0 ? "👑&nbsp;" : `<span style="display:inline-block;width:20px;">${i + 1}.</span>`;
       const active = s.name === this.selectedPlayer ? "color:var(--cyan);" : "color:var(--text-mid);";
-      return `<span style="${active} font-size:12px;">${medal}${s.name}: ${s.score.toLocaleString()}</span>`;
-    }).join("&nbsp;&nbsp;");
-
-    if (activity && activity.length > 0) {
-      const lines = activity.slice(0, 3).map(a => {
-        const ago = this.timeAgo(a.time);
-        return `<span style="color:var(--text-dim); font-size:10px;">${a.player} — ${ago}</span>`;
-      }).join("&nbsp;&nbsp;");
-      html += `<div style="margin-top:6px;">${lines}</div>`;
-    }
+      return `<div style="${active} font-size:12px;">${medal}${s.name} <span style="opacity:0.6;">${s.score.toLocaleString()}</span></div>`;
+    }).join("");
+    html += `</div>`;
     el.innerHTML = html;
-  }
-
-  private timeAgo(timestamp: number): string {
-    const diff = Date.now() - timestamp;
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "just now";
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    return `${Math.floor(hours / 24)}d ago`;
   }
 
   destroy(): void {

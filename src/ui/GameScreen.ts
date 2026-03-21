@@ -650,8 +650,7 @@ export class GameScreen {
     const btn = document.createElement("button");
     btn.className = "mute-btn";
     btn.textContent = "✕";
-    btn.style.right = "auto";
-    btn.style.left = "8px";
+    btn.style.right = "48px";
     btn.style.touchAction = "manipulation";
     btn.addEventListener("click", () => this.onQuit?.());
     btn.addEventListener("touchend", (e) => { e.preventDefault(); this.onQuit?.(); }, { passive: false });
