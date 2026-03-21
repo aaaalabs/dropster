@@ -137,7 +137,7 @@ export class GameScreen {
             duration: 1500,
             vy: -0.8,
           });
-          this.sound.announce(`Combo ${this.engine.combo}!`, { pitch: 0.1, rate: 1.2 });
+          this.sound.announce(`Combo ${this.engine.combo}!`, { pitch: 0.1, rate: 0.9 });
         }
       }
     };
@@ -153,7 +153,7 @@ export class GameScreen {
           duration: 2000,
           vy: -0.5,
         });
-        this.sound.announce("TETRIS!", { pitch: 0.1, rate: 1.0 });
+        this.sound.announce("TETRIS!", { pitch: 0.1, rate: 0.9 });
       }
       if (event === "back-to-back") {
         this.effects.addPopup("BACK TO BACK!", centerX, centerY - 40, {
@@ -162,7 +162,7 @@ export class GameScreen {
           duration: 2000,
           vy: -0.8,
         });
-        this.sound.announce("Doppelschlag!", { pitch: 0.1, rate: 1.0 });
+        this.sound.announce("Doppelschlag!", { pitch: 0.1, rate: 0.9 });
       }
       if (event === "level-up") {
         this.effects.addPopup(`LEVEL ${this.engine.level + 1}`, centerX, centerY, {
@@ -172,7 +172,7 @@ export class GameScreen {
           vy: -0.8,
         });
         this.music.setLevel(this.engine.level);
-        this.sound.announce(`Level ${this.engine.level + 1}`, { pitch: 0.1, rate: 1.2 });
+        this.sound.announce(`Level ${this.engine.level + 1}`, { pitch: 0.1, rate: 0.9 });
       }
       if (event === "close-call") {
         this.effects.addPopup("KNAPP!", centerX, centerY - 30, {
@@ -184,16 +184,16 @@ export class GameScreen {
         this.particles.burst(centerX, centerY, 20, {
           color: "#ff8800", speed: 3, life: 30, size: 3,
         });
-        this.sound.announce("Knapp!", { pitch: 0.1, rate: 1.3 });
+        this.sound.announce("Knapp!", { pitch: 0.1, rate: 0.9 });
       }
       if (event === "speed-kill") {
-        this.effects.addPopup("SCHNELL!", BOARD_OFFSET_X + 140, BOARD_OFFSET_Y + 30, {
+        this.effects.addPopup("BLITZ!", BOARD_OFFSET_X + 140, BOARD_OFFSET_Y + 30, {
           color: "#00ff88",
           font: "bold 14px Orbitron, monospace",
           duration: 1200,
           vy: -0.8,
         });
-        this.sound.announce("Schnell!", { pitch: 0.1, rate: 1.4 });
+        this.sound.announce("Blitzschnell!", { pitch: 0.1, rate: 0.9 });
       }
       if (event === "perfect-clear") {
         this.effects.flashScreen("#00f0f0", 300);
@@ -216,7 +216,7 @@ export class GameScreen {
           duration: 2000,
           vy: -0.5,
         });
-        this.sound.announce("Neuer Rekord!", { pitch: 0.1, rate: 1.0 });
+        this.sound.announce("Neuer Rekord!", { pitch: 0.1, rate: 0.9 });
       }
     };
 

@@ -240,7 +240,7 @@ export class SoundEngine {
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.pitch = opts?.pitch ?? 0.1;   // very low = robotic
-    utterance.rate = opts?.rate ?? 1.2;
+    utterance.rate = opts?.rate ?? 0.9;     // slow and deliberate
     utterance.volume = 0.8;
 
     // Prefer German voice for German-speaking kids
