@@ -48,10 +48,12 @@ export class GameEngine {
   private highScore: number;
   readonly garbageManager = new GarbageManager();
   private diff: DifficultyConfig;
+  private playerName: string;
 
-  constructor(difficulty: string = "normal") {
+  constructor(difficulty: string = "normal", player: string = "default") {
     this.diff = DIFFICULTIES[difficulty] ?? DIFFICULTIES.normal;
-    this.highScore = parseInt(this.localStorageGet("dropster-highscore") ?? "0", 10);
+    this.playerName = player;
+    this.highScore = parseInt(this.localStorageGet(`dropster-highscore-${player}`) ?? "0", 10);
     this.currentPiece = this.spawnPiece();
   }
 
@@ -290,7 +292,7 @@ export class GameEngine {
   saveHighScore(): void {
     if (this.score > this.highScore) {
       this.highScore = this.score;
-      this.localStorageSet("dropster-highscore", String(this.score));
+      this.localStorageSet(`dropster-highscore-${this.playerName}`, String(this.score));
     }
   }
 

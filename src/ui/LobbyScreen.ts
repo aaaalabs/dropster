@@ -8,9 +8,11 @@ export interface LobbyCallbacks {
 export class LobbyScreen {
   private container: HTMLDivElement;
   selectedDifficulty = "normal";
+  selectedPlayer: string;
 
   constructor(parent: HTMLElement, callbacks: LobbyCallbacks) {
     this.container = document.createElement("div");
+    this.selectedPlayer = localStorage.getItem("dropster-player") ?? "Leander";
     this.container.id = "lobby";
     this.container.innerHTML = `
       <div class="lobby">
@@ -22,6 +24,12 @@ export class LobbyScreen {
             <input id="input-code" class="code-input" type="text" maxlength="4" placeholder="CODE" autocomplete="off" />
             <button id="btn-join" class="lobby-btn btn-secondary">Join</button>
           </div>
+          <div id="player-selector" style="display:flex; gap:6px; justify-content:center;">
+            <button data-player="Leander" class="lobby-btn btn-ghost" style="flex:1; padding:10px 0; font-size:11px; border-color:var(--cyan); color:var(--cyan); opacity:1;">Leander</button>
+            <button data-player="Finn" class="lobby-btn btn-ghost" style="flex:1; padding:10px 0; font-size:11px; opacity:0.5;">Finn</button>
+            <button data-player="Mama" class="lobby-btn btn-ghost" style="flex:1; padding:10px 0; font-size:11px; opacity:0.5;">Mama</button>
+            <button data-player="Papa" class="lobby-btn btn-ghost" style="flex:1; padding:10px 0; font-size:11px; opacity:0.5;">Papa</button>
+          </div>
           <div class="divider"></div>
           <div id="difficulty-selector" style="display:flex; gap:6px; justify-content:center;">
             <button data-diff="chill" class="lobby-btn btn-ghost" style="flex:1; padding:10px 0; font-size:10px; opacity:0.5;">CHILL</button>
@@ -31,6 +39,7 @@ export class LobbyScreen {
           </div>
           <button id="btn-solo" class="lobby-btn btn-ghost">Solo Practice</button>
         </div>
+        <div id="highscore-display" style="margin-top:16px; font-family:var(--font-display); letter-spacing:0.05em;"></div>
         <div id="lobby-status" class="lobby-status"></div>
         <div class="controls-hint">
           <p>← → Move &nbsp; ↑ Rotate &nbsp; Space Drop &nbsp; C Hold &nbsp; Esc Quit</p>
@@ -46,6 +55,29 @@ export class LobbyScreen {
       const code = input.value.trim().toUpperCase();
       if (code.length === 4) callbacks.onJoinRoom(code);
     });
+
+    // Player selector
+    const playerBtns = this.container.querySelectorAll("#player-selector button");
+    const updatePlayerBtns = (): void => {
+      playerBtns.forEach(b => {
+        const el = b as HTMLElement;
+        const active = el.dataset.player === this.selectedPlayer;
+        el.style.opacity = active ? "1" : "0.5";
+        el.style.borderColor = active ? "var(--cyan)" : "rgba(255,255,255,0.08)";
+        el.style.color = active ? "var(--cyan)" : "var(--text-mid)";
+      });
+    };
+    updatePlayerBtns();
+    playerBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        this.selectedPlayer = (btn as HTMLElement).dataset.player ?? "Leander";
+        localStorage.setItem("dropster-player", this.selectedPlayer);
+        updatePlayerBtns();
+        this.showHighScores();
+      });
+    });
+
+    this.showHighScores();
 
     // Difficulty selector
     const diffBtns = this.container.querySelectorAll("#difficulty-selector button");
@@ -89,6 +121,27 @@ export class LobbyScreen {
         <div class="room-code-display">${code}</div>
       `;
     }
+  }
+
+  showHighScores(): void {
+    const el = this.container.querySelector("#highscore-display");
+    if (!el) return;
+    const players = ["Leander", "Finn", "Mama", "Papa"];
+    const scores = players.map(p => {
+      const s = parseInt(localStorage.getItem(`dropster-highscore-${p}`) ?? "0", 10);
+      return { name: p, score: s };
+    }).filter(s => s.score > 0).sort((a, b) => b.score - a.score);
+
+    if (scores.length === 0) {
+      el.innerHTML = "";
+      return;
+    }
+
+    el.innerHTML = scores.map((s, i) => {
+      const medal = i === 0 ? "👑" : "";
+      const active = s.name === this.selectedPlayer ? "color:var(--cyan);" : "color:var(--text-mid);";
+      return `<span style="${active} font-size:12px;">${medal}${s.name}: ${s.score.toLocaleString()}</span>`;
+    }).join("&nbsp;&nbsp;");
   }
 
   destroy(): void {
