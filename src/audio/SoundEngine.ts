@@ -243,9 +243,10 @@ export class SoundEngine {
     utterance.rate = opts?.rate ?? 0.9;     // slow and deliberate
     utterance.volume = 0.8;
 
-    // Prefer German voice for German-speaking kids
+    // Prefer German male voice
     const voices = window.speechSynthesis.getVoices();
-    const german = voices.find(v => v.lang.startsWith("de"));
+    const germanMale = voices.find(v => v.lang.startsWith("de") && /male|mann|martin|stefan|hans/i.test(v.name) && !/female|frau/i.test(v.name));
+    const german = germanMale ?? voices.find(v => v.lang.startsWith("de"));
     if (german) utterance.voice = german;
 
     window.speechSynthesis.speak(utterance);
