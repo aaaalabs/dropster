@@ -25,69 +25,75 @@ let gameScreen: GameScreen | null = null;
 let gameOverScreen: GameOverScreen | null = null;
 let peer: PeerConnection | null = null;
 let disconnectTimer: ReturnType<typeof setTimeout> | null = null;
-let localReady = false;
-let remoteReady = false;
+let currentPlayer = "default";
 
 function showLobby(): void {
   cleanup();
   lobby = new LobbyScreen(app, {
-    onCreateRoom: handleCreateRoom,
-    onJoinRoom: handleJoinRoom,
     onSolo: handleSolo,
+    onChallenge: handleChallenge,
+    onAcceptChallenge: handleAcceptChallenge,
   });
 }
-
-async function handleCreateRoom(): Promise<void> {
-  ensureLobbyMusic();
-  peer = new PeerConnection();
-  peer.setHandlers({
-    onMessage: handleMessage,
-    onStatus: (s) => lobby?.setStatus(s),
-    onDisconnect: handleDisconnect,
-  });
-
-  try {
-    const code = await peer.createRoom();
-    lobby?.showRoomCode(code);
-  } catch {
-    lobby?.setStatus("Failed to create room. Try again.");
-  }
-}
-
-async function handleJoinRoom(code: string): Promise<void> {
-  ensureLobbyMusic();
-  peer = new PeerConnection();
-  peer.setHandlers({
-    onMessage: handleMessage,
-    onStatus: (s) => lobby?.setStatus(s),
-    onDisconnect: handleDisconnect,
-  });
-
-  try {
-    await peer.joinRoom(code);
-    lobby?.setStatus("Connected! Waiting for opponent...");
-    localReady = true;
-    peer.send({ type: "ready" });
-    if (remoteReady) startGame();
-  } catch {
-    lobby?.setStatus("Could not connect. Check the code and try again.");
-  }
-}
-
 
 function handleSolo(): void {
   ensureLobbyMusic();
   startGame();
 }
 
+async function handleChallenge(): Promise<void> {
+  ensureLobbyMusic();
+  currentPlayer = lobby?.selectedPlayer ?? "default";
+
+  // Create PeerJS peer, post challenge with our peerId to Redis
+  peer = new PeerConnection();
+  peer.setHandlers({
+    onMessage: handleMessage,
+    onStatus: (s) => lobby?.setStatus(s),
+    onDisconnect: handleDisconnect,
+  });
+
+  try {
+    const peerId = await peer.initPeer();
+    lobby?.setStatus("Waiting for opponent...");
+    await leaderboard.postChallenge(currentPlayer, peerId);
+  } catch {
+    lobby?.setStatus("Failed to create challenge. Try again.");
+    lobby?.cancelWaiting();
+  }
+}
+
+async function handleAcceptChallenge(opponent: string): Promise<void> {
+  ensureLobbyMusic();
+  currentPlayer = lobby?.selectedPlayer ?? "default";
+
+  // Get opponent's peerId from Redis, connect via PeerJS
+  const opponentPeerId = await leaderboard.acceptChallenge(currentPlayer, opponent);
+  if (!opponentPeerId) {
+    lobby?.setStatus("Challenge expired. Try again.");
+    return;
+  }
+
+  peer = new PeerConnection();
+  peer.setHandlers({
+    onMessage: handleMessage,
+    onStatus: (s) => lobby?.setStatus(s),
+    onDisconnect: handleDisconnect,
+  });
+
+  try {
+    await peer.connectToPeer(opponentPeerId);
+    lobby?.setStatus("Connected!");
+    peer.send({ type: "ready" });
+    startGame();
+  } catch {
+    lobby?.setStatus("Could not connect. Try again.");
+  }
+}
+
 function handleMessage(msg: Message): void {
   switch (msg.type) {
     case "ready":
-      remoteReady = true;
-      if (!localReady) {
-        localReady = true;
-        peer?.send({ type: "ready" });
-      }
       if (!gameScreen) startGame();
       break;
     case "garbage":
@@ -118,16 +124,15 @@ function handleMessage(msg: Message): void {
 function handleDisconnect(): void {
   if (disconnectTimer) return;
   disconnectTimer = setTimeout(() => {
-    if (gameScreen) {
-      showGameOver(true);
-    }
+    if (gameScreen) showGameOver(true);
     disconnectTimer = null;
   }, 5000);
 }
 
 function startGame(): void {
   const difficulty = lobby?.selectedDifficulty ?? "normal";
-  const player = lobby?.selectedPlayer ?? "default";
+  const player = lobby?.selectedPlayer ?? currentPlayer;
+  currentPlayer = player;
   lobbyMusic.stop();
   lobbyMusicStarted = false;
   lobby?.destroy();
@@ -165,8 +170,8 @@ function showGameOver(won: boolean): void {
   const score = gameScreen?.getScore() ?? 0;
   const isNewHighScore = gameScreen?.getIsNewHighScore() ?? false;
   const highScore = gameScreen?.getHighScore() ?? 0;
-  const currentPlayer = lobby?.selectedPlayer ?? localStorage.getItem("dropster-player") ?? "default";
   if (score > 0) leaderboard.submitScore(currentPlayer, score);
+  leaderboard.stopPlaying(currentPlayer);
   gameScreen?.destroy();
   gameScreen = null;
 
@@ -197,8 +202,6 @@ function cleanup(): void {
   gameOverScreen = null;
   peer?.destroy();
   peer = null;
-  localReady = false;
-  remoteReady = false;
   if (disconnectTimer) {
     clearTimeout(disconnectTimer);
     disconnectTimer = null;

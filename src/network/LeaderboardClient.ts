@@ -10,10 +10,16 @@ interface ActivityEntry {
   time: number;
 }
 
+interface ChallengeEntry {
+  name: string;
+  peerId: string;
+}
+
 interface LeaderboardData {
   leaderboard: LeaderboardEntry[];
   activity: ActivityEntry[];
   playing: string[];
+  challenges: ChallengeEntry[];
 }
 
 export class LeaderboardClient {
@@ -24,7 +30,7 @@ export class LeaderboardClient {
       const res = await window.fetch("/api/leaderboard");
       return await res.json();
     } catch {
-      return { leaderboard: [], activity: [], playing: [] };
+      return { leaderboard: [], activity: [], playing: [], challenges: [] };
     }
   }
 
@@ -61,6 +67,26 @@ export class LeaderboardClient {
       this.heartbeatId = null;
     }
     this.post({ player, action: "stopped" });
+  }
+
+  async postChallenge(player: string, peerId: string): Promise<void> {
+    await this.post({ player, action: "challenge", peerId });
+  }
+
+  async acceptChallenge(player: string, opponent: string): Promise<string | null> {
+    try {
+      const res = await window.fetch("/api/leaderboard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ player, action: "accept-challenge", opponent }),
+      });
+      const data = await res.json();
+      return data.ok ? data.peerId : null;
+    } catch { return null; }
+  }
+
+  async cancelChallenge(player: string): Promise<void> {
+    await this.post({ player, action: "cancel-challenge" });
   }
 
   private async post(body: Record<string, unknown>): Promise<void> {

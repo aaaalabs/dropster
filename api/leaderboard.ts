@@ -4,6 +4,7 @@ import { Redis } from "@upstash/redis";
 const SCORES_KEY = "dropster:scores";
 const ACTIVITY_KEY = "dropster:activity";
 const PLAYING_KEY = "dropster:playing"; // hash: player → timestamp
+const CHALLENGE_KEY = "dropster:challenge"; // hash: player → peerId
 const MAX_ACTIVITY = 20;
 const PLAYING_TTL = 15; // seconds — must heartbeat within this
 
@@ -28,23 +29,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // GET: fetch leaderboard + activity + who's playing
   if (req.method === "GET") {
-    const [scores, activity, playing] = await Promise.all([
+    const [scores, activity, playing, challenges] = await Promise.all([
       r.hgetall(SCORES_KEY) as Promise<Record<string, string> | null>,
       r.lrange(ACTIVITY_KEY, 0, MAX_ACTIVITY - 1) as Promise<string[]>,
       r.hgetall(PLAYING_KEY) as Promise<Record<string, string> | null>,
+      r.hgetall(CHALLENGE_KEY) as Promise<Record<string, string> | null>,
     ]);
 
     const leaderboard = Object.entries(scores ?? {})
       .map(([name, score]) => ({ name, score: parseInt(String(score), 10) }))
       .sort((a, b) => b.score - a.score);
 
-    // Filter out stale playing entries
     const now = Date.now();
     const activePlayers = Object.entries(playing ?? {})
       .filter(([_, ts]) => now - parseInt(String(ts), 10) < PLAYING_TTL * 1000)
       .map(([name]) => name);
 
-    return res.json({ leaderboard, activity: activity ?? [], playing: activePlayers });
+    // challenges: { playerName: peerId }
+    const waiting = Object.entries(challenges ?? {})
+      .map(([name, peerId]) => ({ name, peerId: String(peerId) }));
+
+    return res.json({ leaderboard, activity: activity ?? [], playing: activePlayers, challenges: waiting });
   }
 
   // POST: submit score / set playing status
@@ -64,6 +69,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Stop playing
     if (action === "stopped") {
       await r.hdel(PLAYING_KEY, player);
+      await r.hdel(CHALLENGE_KEY, player);
+      return res.json({ ok: true });
+    }
+
+    // Post a challenge (waiting for opponent)
+    if (action === "challenge") {
+      const { peerId } = req.body;
+      await r.hset(CHALLENGE_KEY, { [player]: peerId });
+      return res.json({ ok: true });
+    }
+
+    // Accept a challenge (get opponent's peerId, remove their challenge)
+    if (action === "accept-challenge") {
+      const { opponent } = req.body;
+      const peerId = await r.hget(CHALLENGE_KEY, opponent) as string | null;
+      if (peerId) {
+        await r.hdel(CHALLENGE_KEY, opponent);
+        return res.json({ ok: true, peerId });
+      }
+      return res.json({ ok: false, error: "Challenge expired" });
+    }
+
+    // Cancel own challenge
+    if (action === "cancel-challenge") {
+      await r.hdel(CHALLENGE_KEY, player);
       return res.json({ ok: true });
     }
 
