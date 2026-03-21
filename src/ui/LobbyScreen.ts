@@ -2,8 +2,9 @@ import { LeaderboardClient } from "../network/LeaderboardClient";
 
 export interface LobbyCallbacks {
   onSolo: () => void;
-  onChallenge: () => void;               // player wants to challenge
-  onAcceptChallenge: (opponent: string) => void;  // player accepts someone's challenge
+  onChallenge: () => void;
+  onCancelChallenge: () => void;
+  onAcceptChallenge: (opponent: string) => void;
 }
 
 export class LobbyScreen {
@@ -59,6 +60,7 @@ export class LobbyScreen {
     this.container.querySelector("#btn-challenge")!.addEventListener("click", () => {
       if (this.isWaiting) {
         this.cancelWaiting();
+        callbacks.onCancelChallenge();
         return;
       }
       this.isWaiting = true;

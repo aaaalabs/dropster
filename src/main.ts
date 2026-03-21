@@ -34,6 +34,11 @@ function showLobby(): void {
   lobby = new LobbyScreen(app, {
     onSolo: handleSolo,
     onChallenge: handleChallenge,
+    onCancelChallenge: () => {
+      peer?.destroy();
+      peer = null;
+      lobby?.setStatus("");
+    },
     onAcceptChallenge: handleAcceptChallenge,
   });
 }
