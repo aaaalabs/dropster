@@ -4,6 +4,8 @@ export class SoundEngine {
   private ctx: AudioContext | null = null;
   private _muted: boolean;
   private softDropLastMs = 0;
+  private cachedVoice: SpeechSynthesisVoice | null = null;
+  private voiceResolved = false;
   private delayNode: DelayNode | null = null;
   private feedbackNode: GainNode | null = null;
   private compNode: DynamicsCompressorNode | null = null;
@@ -243,11 +245,13 @@ export class SoundEngine {
     utterance.rate = opts?.rate ?? 0.9;     // slow and deliberate
     utterance.volume = 0.8;
 
-    // Prefer German male voice
-    const voices = window.speechSynthesis.getVoices();
-    const germanMale = voices.find(v => v.lang.startsWith("de") && /male|mann|martin|stefan|hans/i.test(v.name) && !/female|frau/i.test(v.name));
-    const german = germanMale ?? voices.find(v => v.lang.startsWith("de"));
-    if (german) utterance.voice = german;
+    if (!this.voiceResolved) {
+      const voices = window.speechSynthesis.getVoices();
+      const germanMale = voices.find(v => v.lang.startsWith("de") && /male|mann|martin|stefan|hans/i.test(v.name) && !/female|frau/i.test(v.name));
+      this.cachedVoice = germanMale ?? voices.find(v => v.lang.startsWith("de")) ?? null;
+      this.voiceResolved = true;
+    }
+    if (this.cachedVoice) utterance.voice = this.cachedVoice;
 
     window.speechSynthesis.speak(utterance);
   }
