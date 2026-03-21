@@ -31,6 +31,7 @@ export class GameScreen {
   private music = new MusicEngine();
   private touch: TouchControls;
   private muteBtn: HTMLElement;
+  private quitBtn: HTMLElement;
   private opponentGrid: number[][] = [];
   private animFrameId = 0;
   private lastGravityDrop = 0;
@@ -268,6 +269,7 @@ export class GameScreen {
     });
 
     this.muteBtn = this.createMuteButton(parent);
+    this.quitBtn = this.createQuitButton(parent);
 
     this.setupInput();
     this.setupResize();
@@ -363,6 +365,7 @@ export class GameScreen {
     this.sound.stopAll();
     this.music.stop();
     this.muteBtn.remove();
+    this.quitBtn.remove();
     window.removeEventListener("resize", this.resize);
     this.canvas.remove();
   }
@@ -631,6 +634,17 @@ export class GameScreen {
       update();
     });
     parent.style.position = "relative";
+    parent.appendChild(btn);
+    return btn;
+  }
+
+  private createQuitButton(parent: HTMLElement): HTMLElement {
+    const btn = document.createElement("button");
+    btn.className = "mute-btn";
+    btn.textContent = "✕";
+    btn.style.right = "auto";
+    btn.style.left = "8px";
+    btn.addEventListener("click", () => this.onQuit?.());
     parent.appendChild(btn);
     return btn;
   }
