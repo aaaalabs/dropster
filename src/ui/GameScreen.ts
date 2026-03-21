@@ -424,10 +424,12 @@ export class GameScreen {
     this.renderer.drawText("DROPSTER", 10, 24, {
       color: "#00f0f0",
       font: "bold 16px Orbitron, monospace",
+      spacing: "3px",
     });
     this.renderer.drawText(this.playerName, 10, 38, {
       color: "#666",
       font: "11px Orbitron, monospace",
+      spacing: "2px",
     });
 
     this.renderer.drawBoard(this.engine.board.grid, BOARD_OFFSET_X, BOARD_OFFSET_Y, this.engine.level, this.engine.baseHue);
@@ -454,6 +456,7 @@ export class GameScreen {
     this.renderer.drawText("NEXT", 10, BOARD_OFFSET_Y + 10, {
       color: "#4a4a6a",
       font: "10px Orbitron, monospace",
+      spacing: "2px",
     });
     previews.forEach((type, i) => {
       this.renderer.drawPreviewPiece(type, "", 10, BOARD_OFFSET_Y + 20 + i * 50);
@@ -479,6 +482,7 @@ export class GameScreen {
       this.renderer.drawText(this.opponentName.toUpperCase(), OPP_OFFSET_X, OPP_OFFSET_Y - 10, {
         color: "#666",
         font: "11px Orbitron, monospace",
+        spacing: "2px",
       });
     }
     if (this.opponentGrid.length > 0) {

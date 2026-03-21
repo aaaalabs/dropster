@@ -109,9 +109,12 @@ export class Renderer {
     x: number,
     y: number
   ): void {
+    const ctx = this.ctx as CanvasRenderingContext2D & { letterSpacing?: string };
+    if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "2px";
     this.ctx.fillStyle = "#ccc";
     this.ctx.font = "11px Orbitron, monospace";
     this.ctx.fillText(label, x, y);
+    if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "0px";
 
     const pieceType = type as keyof typeof PIECE_COLORS;
     const shape = PIECE_SHAPES[pieceType][0];
@@ -178,6 +181,8 @@ export class Renderer {
   }
 
   drawScore(score: number, combo: number, x: number, y: number): void {
+    const ctx = this.ctx as CanvasRenderingContext2D & { letterSpacing?: string };
+    if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "2px";
     this.ctx.fillStyle = "#4a4a6a";
     this.ctx.font = "10px Orbitron, monospace";
     this.ctx.fillText("SCORE", x, y);
@@ -189,6 +194,7 @@ export class Renderer {
       this.ctx.font = "bold 12px Orbitron, monospace";
       this.ctx.fillText(`×${combo}`, x, y + 36);
     }
+    if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "0px";
   }
 
   drawCountdown(count: number): void {
@@ -224,12 +230,15 @@ export class Renderer {
     text: string,
     x: number,
     y: number,
-    opts?: { color?: string; font?: string; align?: CanvasTextAlign }
+    opts?: { color?: string; font?: string; align?: CanvasTextAlign; spacing?: string }
   ): void {
     this.ctx.fillStyle = opts?.color ?? "#fff";
     this.ctx.font = opts?.font ?? "16px monospace";
     this.ctx.textAlign = opts?.align ?? "start";
+    const ctx = this.ctx as CanvasRenderingContext2D & { letterSpacing?: string };
+    if (opts?.spacing && ctx.letterSpacing !== undefined) ctx.letterSpacing = opts.spacing;
     this.ctx.fillText(text, x, y);
+    if (opts?.spacing && ctx.letterSpacing !== undefined) ctx.letterSpacing = "0px";
     this.ctx.textAlign = "start";
   }
 
