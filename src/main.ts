@@ -134,10 +134,12 @@ function startGame(): void {
   lobby = null;
 
   gameScreen = new GameScreen(app, difficulty, player);
+  leaderboard.startPlaying(player);
 
   gameScreen.onSendGarbage = (lines) => peer?.send({ type: "garbage", lines });
   gameScreen.onSendBoard = (grid) => peer?.send({ type: "board", grid });
   gameScreen.onGameOver = () => {
+    leaderboard.stopPlaying(player);
     peer?.send({ type: "gameOver" });
     showGameOver(false);
   };
@@ -145,8 +147,8 @@ function startGame(): void {
   gameScreen.onQuit = () => {
     gameScreen?.saveHighScore();
     const quitScore = gameScreen?.getScore() ?? 0;
-    const quitPlayer = player;
-    if (quitScore > 0) leaderboard.submitScore(quitPlayer, quitScore);
+    if (quitScore > 0) leaderboard.submitScore(player, quitScore);
+    leaderboard.stopPlaying(player);
     gameScreen?.destroy();
     gameScreen = null;
     peer?.destroy();

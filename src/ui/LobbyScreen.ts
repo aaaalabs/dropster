@@ -10,6 +10,8 @@ export interface LobbyCallbacks {
 export class LobbyScreen {
   private container: HTMLDivElement;
   private lb = new LeaderboardClient();
+  private activePlayers: string[] = [];
+  private pollId: ReturnType<typeof setInterval> | null = null;
   selectedDifficulty = "normal";
   selectedPlayer: string;
 
@@ -63,22 +65,47 @@ export class LobbyScreen {
     const playerBtns = this.container.querySelectorAll("#player-selector button");
     const updatePlayerBtns = (): void => {
       playerBtns.forEach(b => {
-        const el = b as HTMLElement;
-        const active = el.dataset.player === this.selectedPlayer;
-        el.style.opacity = active ? "1" : "0.5";
-        el.style.borderColor = active ? "var(--cyan)" : "rgba(255,255,255,0.08)";
-        el.style.color = active ? "var(--cyan)" : "var(--text-mid)";
+        const el = b as HTMLButtonElement;
+        const name = el.dataset.player ?? "";
+        const active = name === this.selectedPlayer;
+        const playing = this.activePlayers.includes(name);
+
+        if (playing && !active) {
+          el.style.opacity = "0.3";
+          el.style.borderColor = "#00ff88";
+          el.style.color = "#00ff88";
+          el.disabled = true;
+          el.style.cursor = "not-allowed";
+          el.innerHTML = `<div style="font-size:7px;">🎮 PLAYING</div><div>${name}</div>`;
+        } else {
+          el.disabled = false;
+          el.style.cursor = "pointer";
+          el.style.opacity = active ? "1" : "0.5";
+          el.style.borderColor = active ? "var(--cyan)" : "rgba(255,255,255,0.08)";
+          el.style.color = active ? "var(--cyan)" : "var(--text-mid)";
+          el.textContent = name;
+        }
       });
     };
     updatePlayerBtns();
     playerBtns.forEach(btn => {
       btn.addEventListener("click", () => {
-        this.selectedPlayer = (btn as HTMLElement).dataset.player ?? "Leander";
+        const el = btn as HTMLButtonElement;
+        if (el.disabled) return;
+        this.selectedPlayer = el.dataset.player ?? "Leander";
         localStorage.setItem("dropster-player", this.selectedPlayer);
         updatePlayerBtns();
         this.showHighScores();
       });
     });
+
+    // Poll for active players every 5s
+    this.pollId = setInterval(() => {
+      this.lb.fetch().then(data => {
+        this.activePlayers = data.playing ?? [];
+        updatePlayerBtns();
+      }).catch(() => {});
+    }, 5000);
 
     this.showHighScores();
 
@@ -205,6 +232,7 @@ export class LobbyScreen {
   }
 
   destroy(): void {
+    if (this.pollId) clearInterval(this.pollId);
     this.container.remove();
   }
 }
