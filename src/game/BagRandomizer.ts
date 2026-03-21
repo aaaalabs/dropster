@@ -19,7 +19,9 @@ export class BagRandomizer {
   }
 
   private refill(): void {
-    this.bag = [...ALL_PIECE_TYPES];
+    // Double-bag: 2x each piece = 14 pieces per bag
+    // More I-pieces, fewer droughts, more Tetris opportunities
+    this.bag = [...ALL_PIECE_TYPES, ...ALL_PIECE_TYPES];
     for (let i = this.bag.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [this.bag[i], this.bag[j]] = [this.bag[j], this.bag[i]];

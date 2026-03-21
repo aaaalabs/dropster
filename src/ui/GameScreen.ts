@@ -19,7 +19,7 @@ const BOARD_OFFSET_X = SIDE_PANEL_WIDTH + 20;
 const BOARD_OFFSET_Y = 40;
 const OPP_OFFSET_X = BOARD_OFFSET_X + COLS * CELL_SIZE + 30;
 const OPP_OFFSET_Y = BOARD_OFFSET_Y + 30;
-const LINE_FLASH_MS = 100;
+const LINE_FLASH_MS = 250;
 const SHAKE_AMPLITUDE = 3;
 
 export class GameScreen {
@@ -84,9 +84,10 @@ export class GameScreen {
       this.flashExpiresAt = performance.now() + LINE_FLASH_MS;
 
       // Hit stop — freeze game logic so the moment breathes
-      // 1 line = 120ms, 2 = 180ms, 3 = 250ms, Tetris = 400ms
-      const freezeMs = count === 4 ? 400 : 80 + count * 60;
+      // 1 line = 300ms, 2 = 500ms, 3 = 700ms, Tetris = 1000ms
+      const freezeMs = count === 4 ? 1000 : 100 + count * 200;
       this.freezeUntil = performance.now() + freezeMs;
+      this.flashExpiresAt = performance.now() + freezeMs * 0.6; // flash lasts 60% of freeze
 
       // Particles: burst from each cleared row
       for (const row of rows) {
@@ -101,9 +102,11 @@ export class GameScreen {
         });
       }
 
-      // Screen flash for tetris
-      if (count === 4) {
-        this.effects.flashScreen("#fff", 200);
+      // Screen flash — bigger for more lines
+      if (count >= 2) {
+        const flashDur = count === 4 ? 500 : 150 + count * 50;
+        const flashColor = count === 4 ? "#fff" : "rgba(0,240,240,0.3)";
+        this.effects.flashScreen(flashColor, flashDur);
       }
 
       // Score popup
