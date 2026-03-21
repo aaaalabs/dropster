@@ -7,6 +7,7 @@ interface TextPopup {
   startTime: number;
   duration: number;
   vy: number;
+  centered?: boolean;
 }
 
 interface Flash {
@@ -50,6 +51,7 @@ export class ScreenEffects {
     font?: string;
     duration?: number;
     vy?: number;
+    centered?: boolean;
   }): void {
     this.popups.push({
       text, x, y,
@@ -58,6 +60,17 @@ export class ScreenEffects {
       startTime: performance.now(),
       duration: opts?.duration ?? 1000,
       vy: opts?.vy ?? -1.5,
+      centered: opts?.centered ?? false,
+    });
+  }
+
+  addWarning(text: string, duration: number = 2000): void {
+    this.addPopup(text, 0, 80, {
+      color: "#ff0044",
+      font: "bold 24px Orbitron, monospace",
+      duration,
+      vy: 0,
+      centered: true,
     });
   }
 
@@ -162,14 +175,15 @@ export class ScreenEffects {
       if (remaining <= 0) return false;
 
       const frames = elapsed / (1000 / 60);
+      const drawX = p.centered ? canvas.width / 2 : p.x;
       ctx.save();
       ctx.globalAlpha = remaining / p.duration;
       ctx.font = p.font;
       ctx.fillStyle = p.color;
       ctx.shadowColor = p.color;
       ctx.shadowBlur = 12;
-      ctx.textAlign = "center";
-      ctx.fillText(p.text, p.x, p.y + p.vy * frames);
+      ctx.textAlign = p.centered ? "center" : "left";
+      ctx.fillText(p.text, drawX, p.y + p.vy * frames);
       ctx.restore();
 
       return true;

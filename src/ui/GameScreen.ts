@@ -165,6 +165,46 @@ export class GameScreen {
         });
         this.music.setLevel(this.engine.level);
       }
+      if (event === "close-call") {
+        this.effects.addPopup("CLOSE CALL!", centerX, centerY - 30, {
+          color: "#ff8800",
+          font: "bold 22px Orbitron, monospace",
+          duration: 1800,
+          vy: -0.6,
+        });
+        this.particles.burst(centerX, centerY, 20, {
+          color: "#ff8800", speed: 3, life: 30, size: 3,
+        });
+      }
+      if (event === "speed-kill") {
+        this.effects.addPopup("SPEED KILL!", BOARD_OFFSET_X + 140, BOARD_OFFSET_Y + 30, {
+          color: "#00ff88",
+          font: "bold 14px Orbitron, monospace",
+          duration: 1200,
+          vy: -0.8,
+        });
+      }
+      if (event === "perfect-clear") {
+        this.effects.flashScreen("#00f0f0", 300);
+        this.effects.addPopup("PERFECT CLEAR!", centerX, centerY, {
+          color: "#ffd700",
+          font: "bold 28px Orbitron, monospace",
+          duration: 2500,
+          vy: -0.4,
+        });
+        this.particles.burst(centerX, centerY, 40, {
+          color: "#ffd700", speed: 5, life: 50, size: 4, gravity: 0.05,
+        });
+        this.freezeUntil = performance.now() + 600;
+      }
+      if (event === "new-highscore") {
+        this.effects.addPopup("NEW BEST!", centerX, centerY + 40, {
+          color: "#ffd700",
+          font: "bold 20px Orbitron, monospace",
+          duration: 2000,
+          vy: -0.5,
+        });
+      }
     };
 
     this.touch = new TouchControls(this.canvas, {
@@ -239,6 +279,7 @@ export class GameScreen {
     this.shakeTimer = 150;
     this.sound.garbageReceived();
     this.effects.flashScreen("#ff000060", 150);
+    this.effects.addWarning(`INCOMING ×${lines}`);
     // Particles burst from bottom
     const bottomY = BOARD_OFFSET_Y + ROWS * CELL_SIZE;
     this.particles.burst(BOARD_OFFSET_X + (COLS * CELL_SIZE) / 2, bottomY, 10, {
@@ -264,6 +305,14 @@ export class GameScreen {
 
   getScore(): number {
     return this.engine.score;
+  }
+
+  getIsNewHighScore(): boolean {
+    return this.engine.isNewHighScore;
+  }
+
+  getHighScore(): number {
+    return this.engine.currentHighScore;
   }
 
   requestPause(): boolean {
@@ -340,7 +389,7 @@ export class GameScreen {
       font: "bold 16px Orbitron, monospace",
     });
 
-    this.renderer.drawBoard(this.engine.board.grid, BOARD_OFFSET_X, BOARD_OFFSET_Y);
+    this.renderer.drawBoard(this.engine.board.grid, BOARD_OFFSET_X, BOARD_OFFSET_Y, this.engine.level);
 
     const ghostY = this.engine.board.getGhostY(this.engine.currentPiece);
     this.renderer.drawGhost(this.engine.currentPiece, ghostY, BOARD_OFFSET_X, BOARD_OFFSET_Y);

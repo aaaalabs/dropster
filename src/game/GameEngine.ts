@@ -33,9 +33,30 @@ export class GameEngine {
 
   private bag = new BagRandomizer();
   private holdUsed = false;
+  private wasInDanger = false;
+  private pieceSpawnTime = 0;
+  private highScore: number;
   readonly garbageManager = new GarbageManager();
+
   constructor() {
+    this.highScore = parseInt(this.localStorageGet("dropster-highscore") ?? "0", 10);
     this.currentPiece = this.spawnPiece();
+  }
+
+  private localStorageGet(key: string): string | null {
+    try { return localStorage.getItem(key); } catch { return null; }
+  }
+
+  private localStorageSet(key: string, value: string): void {
+    try { localStorage.setItem(key, value); } catch { /* no-op in non-browser env */ }
+  }
+
+  get isNewHighScore(): boolean {
+    return this.score > this.highScore && this.highScore > 0;
+  }
+
+  get currentHighScore(): number {
+    return this.highScore;
   }
 
   start(_time: number): void {
@@ -118,6 +139,8 @@ export class GameEngine {
 
   tick(_elapsed: number): void {
     if (this.gameOver) return;
+
+    if (this.getBoardFillPercent() > 0.8) this.wasInDanger = true;
 
     const readyGarbage = this.garbageManager.getReadyGarbage();
     if (readyGarbage > 0) {
@@ -206,9 +229,28 @@ export class GameEngine {
       if (netGarbage > 0 && this.onGarbage) {
         this.onGarbage(netGarbage);
       }
+
+      // Speed kill bonus: reward fast clears
+      if (Date.now() - this.pieceSpawnTime < 2000) {
+        this.score += 50;
+        this.onSpecialEvent?.("speed-kill");
+      }
+
+      // Perfect clear: entire board is empty after clearing
+      if (this.getBoardFillPercent() === 0) {
+        this.score += 1000;
+        this.onSpecialEvent?.("perfect-clear");
+      }
     } else {
       this.combo = 0;
     }
+
+    // Near-miss detection: escaped danger zone
+    const fill = this.getBoardFillPercent();
+    if (this.wasInDanger && fill < 0.6) {
+      this.onSpecialEvent?.("close-call");
+    }
+    this.wasInDanger = fill > 0.8;
 
     this.holdUsed = false;
     this.currentPiece = this.spawnPiece();
@@ -221,6 +263,7 @@ export class GameEngine {
   }
 
   private spawnPiece(): Piece {
+    this.pieceSpawnTime = Date.now();
     const type = this.bag.next();
     return new Piece(type, this.getSpawnCol(type));
   }
@@ -233,6 +276,11 @@ export class GameEngine {
 
   private triggerGameOver(): void {
     this.gameOver = true;
+    if (this.score > this.highScore) {
+      this.highScore = this.score;
+      this.localStorageSet("dropster-highscore", String(this.score));
+      this.onSpecialEvent?.("new-highscore");
+    }
     this.onGameOver?.();
   }
 }

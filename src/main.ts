@@ -153,6 +153,8 @@ function startGame(): void {
 
 function showGameOver(won: boolean): void {
   const score = gameScreen?.getScore() ?? 0;
+  const isNewHighScore = gameScreen?.getIsNewHighScore() ?? false;
+  const highScore = gameScreen?.getHighScore() ?? 0;
   gameScreen?.destroy();
   gameScreen = null;
 
@@ -168,7 +170,9 @@ function showGameOver(won: boolean): void {
       peer = null;
       ensureLobbyMusic();
       showLobby();
-    }
+    },
+    isNewHighScore,
+    highScore
   );
 }
 

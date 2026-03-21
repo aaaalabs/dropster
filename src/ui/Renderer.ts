@@ -38,11 +38,18 @@ export class Renderer {
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
-  drawBoard(grid: Grid, offsetX: number, offsetY: number): void {
-    this.ctx.fillStyle = "#0a0a14";
+  drawBoard(grid: Grid, offsetX: number, offsetY: number, level: number = 0): void {
+    const hue = (level * 40) % 360;
+    const intensity = Math.min(level * 0.03, 0.25);
+    this.ctx.fillStyle = level > 0
+      ? `hsla(${hue}, 60%, 5%, 1)`
+      : "#0a0a14";
     this.ctx.fillRect(offsetX, offsetY, this.boardWidth, this.boardHeight);
 
-    this.ctx.strokeStyle = GRID_LINE_COLOR;
+    const gridAlpha = 0.15 + intensity * 0.3;
+    this.ctx.strokeStyle = level > 0
+      ? `hsla(${hue}, 40%, 20%, ${gridAlpha})`
+      : GRID_LINE_COLOR;
     this.ctx.lineWidth = 0.5;
     for (let x = 0; x <= COLS; x++) {
       this.ctx.beginPath();
