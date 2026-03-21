@@ -131,48 +131,38 @@ export class SoundEngine {
 
   lineClear(count: number): void {
     if (this._muted) return;
-    const ctx = this.getCtx();
-    const t = ctx.currentTime;
 
-    if (count === 4) {
-      const notes = [261.6, 329.6, 392, 523.2];
-      notes.forEach((freq, i) => {
-        const start = t + i * 0.07;
-        for (let l = 0; l < 3; l++) {
-          const osc = ctx.createOscillator();
-          osc.type = 'sawtooth';
-          const spread = (l - 1) * 10;
-          osc.frequency.setValueAtTime(freq, start);
-          osc.detune.setValueAtTime(spread, start);
-          const g = ctx.createGain();
-          const f = ctx.createBiquadFilter();
-          f.type = 'lowpass';
-          f.frequency.setValueAtTime(1500, start);
-          f.frequency.linearRampToValueAtTime(4000, start + 0.3);
-          g.gain.setValueAtTime(0.18, start);
-          g.gain.setValueAtTime(0.18, start + 0.005);
-          g.gain.exponentialRampToValueAtTime(0.001, start + 0.8);
-          osc.connect(f);
-          f.connect(g);
-          g.connect(this.compNode!);
-          g.connect(this.delayNode!);
-          osc.start(start);
-          osc.stop(start + 0.8);
-        }
+    // Explosion sound: bass impact sweep DOWN + heavy filtered noise burst
+    // More lines = bigger explosion
+
+    const dur = 0.3 + count * 0.15;
+    const bassFreq = 120 + count * 20;
+    const noiseGain = 0.1 + count * 0.05;
+    const noiseDur = 0.15 + count * 0.08;
+
+    // Bass impact: sweeps DOWN (explosion feel)
+    this.layeredOsc('sawtooth', bassFreq, 0.4, dur, {
+      freqEnd: 30, layers: 3, detune: 15, filterFreq: 600, reverb: true,
+    });
+
+    // Heavy noise burst (filtered low = rumble, not hiss)
+    this.noise(noiseGain, noiseDur, 500 + count * 100, true);
+
+    if (count >= 2) {
+      // Second bass layer, slightly delayed for thickness
+      this.layeredOsc('sawtooth', bassFreq * 0.7, 0.25, dur * 0.8, {
+        freqEnd: 20, layers: 2, detune: 20, filterFreq: 400, reverb: true,
       });
-      this.noise(0.1, 0.15, 2000, true);
-      return;
     }
 
-    if (count === 1) {
-      this.layeredOsc('sawtooth', 300, 0.25, 0.3, { freqEnd: 600, filterFreq: 2500 });
-    } else if (count === 2) {
-      this.layeredOsc('sawtooth', 300, 0.25, 0.35, { freqEnd: 600, filterFreq: 2800 });
-      this.layeredOsc('sawtooth', 600, 0.15, 0.35, { freqEnd: 1200, filterFreq: 3000 });
-    } else {
-      this.layeredOsc('sawtooth', 300, 0.2, 0.4, { freqEnd: 700, layers: 3, filterFreq: 3000 });
-      this.layeredOsc('sawtooth', 600, 0.15, 0.4, { freqEnd: 1400, layers: 3, filterFreq: 3200 });
-      this.layeredOsc('sawtooth', 900, 0.1, 0.4, { freqEnd: 1800, filterFreq: 3500 });
+    if (count === 4) {
+      // Tetris: massive explosion — extra sub-bass + longer noise + impact transient
+      this.layeredOsc('sine', 60, 0.5, 0.6, {
+        freqEnd: 20, layers: 2, detune: 8, filterFreq: 200,
+      });
+      this.noise(0.25, 0.4, 800, true);
+      // Sharp transient click for attack
+      this.layeredOsc('square', 1000, 0.3, 0.01, { filterFreq: 5000 });
     }
   }
 
