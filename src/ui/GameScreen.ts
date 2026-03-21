@@ -218,6 +218,11 @@ export class GameScreen {
         });
         this.sound.announce("New record!");
       }
+      if (event === "incoming-garbage") {
+        this.effects.addWarning("GARBAGE!");
+        this.shakeTimer = 100;
+        this.sound.garbageReceived();
+      }
     };
 
     this.touch = new TouchControls(this.canvas, {
@@ -406,7 +411,7 @@ export class GameScreen {
       font: "bold 16px Orbitron, monospace",
     });
 
-    this.renderer.drawBoard(this.engine.board.grid, BOARD_OFFSET_X, BOARD_OFFSET_Y, this.engine.level);
+    this.renderer.drawBoard(this.engine.board.grid, BOARD_OFFSET_X, BOARD_OFFSET_Y, this.engine.level, this.engine.baseHue);
 
     const ghostY = this.engine.board.getGhostY(this.engine.currentPiece);
     this.renderer.drawGhost(this.engine.currentPiece, ghostY, BOARD_OFFSET_X, BOARD_OFFSET_Y);

@@ -35,10 +35,10 @@ export class LobbyScreen {
           </div>
           <div class="divider"></div>
           <div id="difficulty-selector" style="display:flex; gap:6px; justify-content:center;">
-            <button data-diff="chill" class="lobby-btn btn-ghost" style="flex:1; padding:10px 0; font-size:10px; opacity:0.5;">CHILL</button>
-            <button data-diff="normal" class="lobby-btn btn-ghost" style="flex:1; padding:10px 0; font-size:10px; border-color:var(--cyan); color:var(--cyan); opacity:1;">NORMAL</button>
-            <button data-diff="hard" class="lobby-btn btn-ghost" style="flex:1; padding:10px 0; font-size:10px; opacity:0.5;">HARD</button>
-            <button data-diff="insane" class="lobby-btn btn-ghost" style="flex:1; padding:10px 0; font-size:10px; opacity:0.5;">INSANE</button>
+            <button data-diff="chill" class="lobby-btn btn-ghost" style="flex:1; padding:8px 0; font-size:9px; opacity:0.5;"><div>CHILL</div><div style="font-size:7px; opacity:0.6; margin-top:2px;">×0.5</div></button>
+            <button data-diff="normal" class="lobby-btn btn-ghost" style="flex:1; padding:8px 0; font-size:9px; border-color:var(--cyan); color:var(--cyan); opacity:1;"><div>NORMAL</div><div style="font-size:7px; opacity:0.6; margin-top:2px;">×1</div></button>
+            <button data-diff="hard" class="lobby-btn btn-ghost" style="flex:1; padding:8px 0; font-size:9px; opacity:0.5;"><div>HARD</div><div style="font-size:7px; opacity:0.6; margin-top:2px;">×1.5</div></button>
+            <button data-diff="insane" class="lobby-btn btn-ghost" style="flex:1; padding:8px 0; font-size:9px; opacity:0.5;"><div>INSANE</div><div style="font-size:7px; opacity:0.6; margin-top:2px;">×2.5 💀</div></button>
           </div>
           <button id="btn-solo" class="lobby-btn btn-ghost">Solo Practice</button>
         </div>

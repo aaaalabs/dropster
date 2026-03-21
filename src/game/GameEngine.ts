@@ -15,13 +15,17 @@ export interface DifficultyConfig {
   speedDecrease: number;
   speedMin: number;
   levelInterval: number;
+  scoreMultiplier: number;   // multiplies all scores
+  garbageInterval: number;   // ms between random garbage lines, 0 = off
+  garbageAmount: number;     // lines per garbage event
+  hue: number;               // base hue for board color identity
 }
 
 export const DIFFICULTIES: Record<string, DifficultyConfig> = {
-  chill:  { speedInitial: 1200, speedDecrease: 30, speedMin: 300, levelInterval: 120000 },
-  normal: { speedInitial: 1000, speedDecrease: 50, speedMin: 200, levelInterval: 90000 },
-  hard:   { speedInitial: 700,  speedDecrease: 60, speedMin: 120, levelInterval: 60000 },
-  insane: { speedInitial: 500,  speedDecrease: 50, speedMin: 80,  levelInterval: 45000 },
+  chill:  { speedInitial: 1200, speedDecrease: 30, speedMin: 300, levelInterval: 120000, scoreMultiplier: 0.5, garbageInterval: 0,     garbageAmount: 0, hue: 200 },
+  normal: { speedInitial: 1000, speedDecrease: 50, speedMin: 200, levelInterval: 90000,  scoreMultiplier: 1.0, garbageInterval: 0,     garbageAmount: 0, hue: 260 },
+  hard:   { speedInitial: 700,  speedDecrease: 60, speedMin: 120, levelInterval: 60000,  scoreMultiplier: 1.5, garbageInterval: 0,     garbageAmount: 0, hue: 30  },
+  insane: { speedInitial: 500,  speedDecrease: 50, speedMin: 80,  levelInterval: 45000,  scoreMultiplier: 2.5, garbageInterval: 20000, garbageAmount: 2, hue: 0   },
 };
 
 export class GameEngine {
@@ -71,6 +75,14 @@ export class GameEngine {
 
   get currentHighScore(): number {
     return this.highScore;
+  }
+
+  get baseHue(): number {
+    return this.diff.hue;
+  }
+
+  get difficultyName(): string {
+    return this.playerName;
   }
 
   start(_time: number): void {
@@ -151,10 +163,21 @@ export class GameEngine {
     return Math.max(this.diff.speedMin, this.diff.speedInitial - this.level * this.diff.speedDecrease);
   }
 
-  tick(_elapsed: number): void {
+  private lastGarbageTick = 0;
+
+  tick(elapsed: number): void {
     if (this.gameOver) return;
 
     if (this.getBoardFillPercent() > 0.8) this.wasInDanger = true;
+
+    // Random garbage for insane mode
+    if (this.diff.garbageInterval > 0 && elapsed - this.lastGarbageTick >= this.diff.garbageInterval) {
+      this.lastGarbageTick = elapsed;
+      if (elapsed > 3000) { // grace period at start
+        this.garbageManager.queueGarbage(this.diff.garbageAmount);
+        this.onSpecialEvent?.("incoming-garbage");
+      }
+    }
 
     const readyGarbage = this.garbageManager.getReadyGarbage();
     if (readyGarbage > 0) {
@@ -219,8 +242,8 @@ export class GameEngine {
     if (cleared > 0) {
       const scoreKey = ["single", "double", "triple", "tetris"][cleared - 1] as keyof typeof SCORING;
       const baseScore = SCORING[scoreKey] as number;
-      const multiplier = this.combo > 0 ? Math.pow(SCORING.comboMultiplier, this.combo) : 1;
-      this.score += Math.floor(baseScore * multiplier);
+      const comboMult = this.combo > 0 ? Math.pow(SCORING.comboMultiplier, this.combo) : 1;
+      this.score += Math.floor(baseScore * comboMult * this.diff.scoreMultiplier);
       this.combo++;
 
       this.onLineClear?.(cleared, clearedRows, rowSnapshots);

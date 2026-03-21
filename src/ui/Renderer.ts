@@ -5,7 +5,6 @@ import { PIECE_SHAPES } from "../game/constants";
 
 const CELL_SIZE = 28;
 const MINI_CELL_SIZE = 12;
-const GRID_LINE_COLOR = "#1a1a2e";
 const GHOST_ALPHA = 0.3;
 const BG_COLOR = "#0f0f1a";
 const GARBAGE_COLOR = "#666666";
@@ -38,18 +37,14 @@ export class Renderer {
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
-  drawBoard(grid: Grid, offsetX: number, offsetY: number, level: number = 0): void {
-    const hue = (level * 40) % 360;
-    const intensity = Math.min(level * 0.03, 0.25);
-    this.ctx.fillStyle = level > 0
-      ? `hsla(${hue}, 60%, 5%, 1)`
-      : "#0a0a14";
+  drawBoard(grid: Grid, offsetX: number, offsetY: number, level: number = 0, baseHue: number = 260): void {
+    const hue = (baseHue + level * 15) % 360; // subtle shift per level within the difficulty's palette
+    const intensity = Math.min(level * 0.02, 0.2);
+    this.ctx.fillStyle = `hsla(${hue}, 50%, ${4 + intensity * 4}%, 1)`;
     this.ctx.fillRect(offsetX, offsetY, this.boardWidth, this.boardHeight);
 
-    const gridAlpha = 0.15 + intensity * 0.3;
-    this.ctx.strokeStyle = level > 0
-      ? `hsla(${hue}, 40%, 20%, ${gridAlpha})`
-      : GRID_LINE_COLOR;
+    const gridAlpha = 0.12 + intensity * 0.2;
+    this.ctx.strokeStyle = `hsla(${hue}, 35%, 18%, ${gridAlpha})`;
     this.ctx.lineWidth = 0.5;
     for (let x = 0; x <= COLS; x++) {
       this.ctx.beginPath();
