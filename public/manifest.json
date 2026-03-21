@@ -1,0 +1,17 @@
+{
+  "name": "Dropster",
+  "short_name": "Dropster",
+  "description": "Competitive Block Battle Arena",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#020208",
+  "theme_color": "#00f0f0",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

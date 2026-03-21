@@ -238,3 +238,7 @@ document.addEventListener("visibilitychange", () => {
 });
 
 showLobby();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}

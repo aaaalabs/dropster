@@ -18,6 +18,9 @@ export class LobbyScreen {
   selectedDifficulty = "normal";
   selectedPlayer: string;
   private isWaiting = false;
+  private bgCanvas: HTMLCanvasElement | null = null;
+  private bgAnimId = 0;
+  private bgBlocks: { x: number; y: number; vy: number; size: number; color: string; opacity: number }[] = [];
 
   constructor(parent: HTMLElement, callbacks: LobbyCallbacks) {
     this.callbacks = callbacks;
@@ -55,6 +58,8 @@ export class LobbyScreen {
       </div>
     `;
     parent.appendChild(this.container);
+    this.bgCanvas = this.createBackground(parent);
+    this.startBackground();
 
     this.container.querySelector("#btn-solo")!.addEventListener("click", callbacks.onSolo);
     this.container.querySelector("#btn-challenge")!.addEventListener("click", () => {
@@ -244,9 +249,62 @@ export class LobbyScreen {
     el.innerHTML = html;
   }
 
+  private createBackground(_parent: HTMLElement): HTMLCanvasElement {
+    const canvas = document.createElement("canvas");
+    canvas.style.position = "fixed";
+    canvas.style.inset = "0";
+    canvas.style.zIndex = "-1";
+    canvas.style.pointerEvents = "none";
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    document.body.appendChild(canvas);
+    return canvas;
+  }
+
+  private startBackground(): void {
+    if (!this.bgCanvas) return;
+    const colors = ["#00f0f0", "#f0f000", "#a000f0", "#00f000", "#f00000", "#0000f0", "#f0a000"];
+    this.bgBlocks = Array.from({ length: 15 }, () => ({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      vy: 0.2 + Math.random() * 0.3,
+      size: 20 + Math.random() * 20,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      opacity: 0.03 + Math.random() * 0.05,
+    }));
+
+    const ctx = this.bgCanvas.getContext("2d");
+    if (!ctx) return;
+
+    const draw = () => {
+      if (!this.bgCanvas) return;
+      ctx.clearRect(0, 0, this.bgCanvas.width, this.bgCanvas.height);
+      for (const b of this.bgBlocks) {
+        b.y += b.vy;
+        if (b.y > this.bgCanvas.height + b.size) {
+          b.y = -b.size;
+          b.x = Math.random() * this.bgCanvas.width;
+        }
+        ctx.globalAlpha = b.opacity;
+        ctx.fillStyle = b.color;
+        ctx.fillRect(b.x, b.y, b.size, b.size);
+      }
+      ctx.globalAlpha = 1;
+      this.bgAnimId = requestAnimationFrame(draw);
+    };
+    this.bgAnimId = requestAnimationFrame(draw);
+  }
+
+  private stopBackground(): void {
+    cancelAnimationFrame(this.bgAnimId);
+    this.bgCanvas?.remove();
+    this.bgCanvas = null;
+  }
+
   destroy(): void {
     if (this.pollId) clearInterval(this.pollId);
     this.lb.stopOnline(this.selectedPlayer);
+    this.stopBackground();
     this.container.remove();
   }
 }

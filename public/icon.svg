@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="64" fill="#020208"/>
+  <rect x="96" y="96" width="80" height="80" rx="8" fill="#00f0f0"/>
+  <rect x="176" y="96" width="80" height="80" rx="8" fill="#00f0f0"/>
+  <rect x="256" y="96" width="80" height="80" rx="8" fill="#00f0f0"/>
+  <rect x="176" y="176" width="80" height="80" rx="8" fill="#00f0f0"/>
+  <text x="256" y="420" text-anchor="middle" fill="#00f0f0" font-family="monospace" font-size="72" font-weight="bold">DROP</text>
+</svg>
