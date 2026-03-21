@@ -2,7 +2,7 @@ export class MusicEngine {
   private ctx: AudioContext | null = null;
   private intervalId: ReturnType<typeof setInterval> | null = null;
   private step = 0;
-  private bpm = 120;
+  private bpm = 90;
   private _muted = false;
   private dangerPct = 0;
   private masterGain: GainNode | null = null;
@@ -48,7 +48,16 @@ export class MusicEngine {
   }
 
   setLevel(level: number): void {
-    this.bpm = Math.min(120 + level * 10, 200);
+    this.bpm = Math.min(90 + level * 8, 150);
+    if (this.intervalId !== null) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+      this.scheduleInterval();
+    }
+  }
+
+  setBpm(bpm: number): void {
+    this.bpm = bpm;
     if (this.intervalId !== null) {
       clearInterval(this.intervalId);
       this.intervalId = null;
@@ -61,19 +70,19 @@ export class MusicEngine {
   }
 
   private scheduleInterval(): void {
-    const ms = (60000 / this.bpm) / 4; // 16th notes
+    const ms = (60000 / this.bpm) / 2; // 8th notes (more relaxed groove)
     this.intervalId = setInterval(() => this.playStep(), ms);
   }
 
   private playStep(): void {
     if (!this.ctx || !this.masterGain) return;
 
-    const stepDuration = (60 / this.bpm) / 4;
-    const noteDuration = stepDuration * 0.6; // staccato
+    const stepDuration = (60 / this.bpm) / 2; // 8th note duration
+    const noteDuration = stepDuration * 0.5; // staccato
     const freq = this.pattern[this.step];
 
     // Main arp note (square = retro)
-    this.playNote(freq, 'square', 0.4, noteDuration);
+    this.playNote(freq, 'square', 0.3, noteDuration);
 
     // Danger: add octave above for tension
     if (this.dangerPct > 0.7) {

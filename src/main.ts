@@ -1,10 +1,22 @@
 import { PeerConnection } from "./network/PeerConnection";
 import { Message } from "./network/Protocol";
+import { MusicEngine } from "./audio/MusicEngine";
 import { LobbyScreen } from "./ui/LobbyScreen";
 import { GameScreen } from "./ui/GameScreen";
 import { GameOverScreen } from "./ui/GameOverScreen";
 
 const app = document.getElementById("app")!;
+const lobbyMusic = new MusicEngine();
+let lobbyMusicStarted = false;
+
+function ensureLobbyMusic(): void {
+  if (lobbyMusicStarted) return;
+  lobbyMusicStarted = true;
+  const muted = localStorage.getItem("dropster-muted") === "true";
+  lobbyMusic.muted = muted;
+  lobbyMusic.setBpm(85);
+  lobbyMusic.start();
+}
 
 let lobby: LobbyScreen | null = null;
 let gameScreen: GameScreen | null = null;
@@ -24,6 +36,7 @@ function showLobby(): void {
 }
 
 async function handleCreateRoom(): Promise<void> {
+  ensureLobbyMusic();
   peer = new PeerConnection();
   peer.setHandlers({
     onMessage: handleMessage,
@@ -40,6 +53,7 @@ async function handleCreateRoom(): Promise<void> {
 }
 
 async function handleJoinRoom(code: string): Promise<void> {
+  ensureLobbyMusic();
   peer = new PeerConnection();
   peer.setHandlers({
     onMessage: handleMessage,
@@ -60,6 +74,7 @@ async function handleJoinRoom(code: string): Promise<void> {
 
 
 function handleSolo(): void {
+  ensureLobbyMusic();
   startGame();
 }
 
@@ -109,6 +124,8 @@ function handleDisconnect(): void {
 }
 
 function startGame(): void {
+  lobbyMusic.stop();
+  lobbyMusicStarted = false;
   lobby?.destroy();
   lobby = null;
 
@@ -149,6 +166,7 @@ function showGameOver(won: boolean): void {
       gameOverScreen = null;
       peer?.destroy();
       peer = null;
+      ensureLobbyMusic();
       showLobby();
     }
   );
