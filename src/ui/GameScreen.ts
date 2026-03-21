@@ -60,13 +60,13 @@ export class GameScreen {
   private lastBoardSend = 0;
   private paused = false;
 
-  private opponentName = "OPPONENT";
+  private opponentName = "";
   private playerName: string;
   private opponentScore = 0;
 
   constructor(parent: HTMLElement, difficulty: string = "normal", player: string = "default", opponent: string = "") {
     this.playerName = player;
-    this.opponentName = opponent || "OPPONENT";
+    this.opponentName = opponent;
     this.canvas = document.createElement("canvas");
     this.canvas.width = OPP_OFFSET_X + COLS * MINI_CELL_SIZE + 20;
     this.canvas.height = BOARD_OFFSET_Y + ROWS * CELL_SIZE + 40;
@@ -472,10 +472,12 @@ export class GameScreen {
       BOARD_OFFSET_Y + 270
     );
 
-    this.renderer.drawText(this.opponentName.toUpperCase(), OPP_OFFSET_X, OPP_OFFSET_Y - 10, {
-      color: "#666",
-      font: "14px monospace",
-    });
+    if (this.opponentName) {
+      this.renderer.drawText(this.opponentName.toUpperCase(), OPP_OFFSET_X, OPP_OFFSET_Y - 10, {
+        color: "#666",
+        font: "11px Orbitron, monospace",
+      });
+    }
     if (this.opponentGrid.length > 0) {
       this.renderer.drawOpponentBoard(this.opponentGrid, OPP_OFFSET_X, OPP_OFFSET_Y);
       if (this.opponentScore > 0) {

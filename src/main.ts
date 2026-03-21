@@ -88,7 +88,7 @@ async function handleAcceptChallenge(opponent: string): Promise<void> {
   try {
     await peer.connectToPeer(opponentPeerId);
     lobby?.setStatus("Connected!");
-    peer.send({ type: "ready" });
+    peer.send({ type: "ready", player: currentPlayer });
     startGame();
   } catch {
     lobby?.setStatus("Could not connect. Try again.");
@@ -98,6 +98,8 @@ async function handleAcceptChallenge(opponent: string): Promise<void> {
 function handleMessage(msg: Message): void {
   switch (msg.type) {
     case "ready":
+      if (msg.player) opponentName = msg.player;
+      peer?.send({ type: "ready", player: currentPlayer });
       if (!gameScreen) startGame();
       break;
     case "garbage":

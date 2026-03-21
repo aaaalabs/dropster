@@ -1,5 +1,5 @@
 export type Message =
-  | { type: "ready" }
+  | { type: "ready"; player?: string }
   | { type: "garbage"; lines: number }
   | { type: "board"; grid: number[][]; score?: number }
   | { type: "gameOver" }
