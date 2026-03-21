@@ -1,7 +1,7 @@
 import { PieceType } from "../types";
 
 export const COLS = 10;
-export const ROWS = 20;
+export const ROWS = 24;
 
 export const PIECE_COLORS: Record<PieceType, string> = {
   I: "#00f0f0",

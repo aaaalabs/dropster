@@ -48,6 +48,9 @@ export class GameScreen {
   private flashRows: number[] = [];
   private flashExpiresAt = 0;
 
+  // Hit stop: freeze game logic briefly on line clears
+  private freezeUntil = 0;
+
   onSendGarbage: ((lines: number) => void) | null = null;
   onSendBoard: ((grid: number[][]) => void) | null = null;
   onGameOver: (() => void) | null = null;
@@ -79,6 +82,11 @@ export class GameScreen {
       this.sound.lineClear(count);
       this.flashRows = rows;
       this.flashExpiresAt = performance.now() + LINE_FLASH_MS;
+
+      // Hit stop — freeze game logic so the moment breathes
+      // 1 line = 120ms, 2 = 180ms, 3 = 250ms, Tetris = 400ms
+      const freezeMs = count === 4 ? 400 : 80 + count * 60;
+      this.freezeUntil = performance.now() + freezeMs;
 
       // Particles: burst from each cleared row
       for (const row of rows) {
@@ -279,20 +287,24 @@ export class GameScreen {
   private loop = (now: number): void => {
     if (this.paused || this.engine.gameOver) return;
 
-    const elapsed = now - this.gameStartTime;
-    const dropInterval = this.engine.getDropInterval(elapsed);
+    const frozen = now < this.freezeUntil;
 
-    if (now - this.lastGravityDrop >= dropInterval) {
-      this.engine.gravityDrop();
-      this.lastGravityDrop = now;
+    if (!frozen) {
+      const elapsed = now - this.gameStartTime;
+      const dropInterval = this.engine.getDropInterval(elapsed);
+
+      if (now - this.lastGravityDrop >= dropInterval) {
+        this.engine.gravityDrop();
+        this.lastGravityDrop = now;
+      }
+
+      this.engine.tick(elapsed);
+
+      // Update danger level
+      const fill = this.engine.getBoardFillPercent();
+      this.effects.setDanger(fill);
+      this.music.setDanger(fill);
     }
-
-    this.engine.tick(elapsed);
-
-    // Update danger level
-    const fill = this.engine.getBoardFillPercent();
-    this.effects.setDanger(fill);
-    this.music.setDanger(fill);
 
     if (now - this.lastBoardSend > 200) {
       this.onSendBoard?.(this.engine.board.toColorGrid());
@@ -395,7 +407,7 @@ export class GameScreen {
   }
 
   private handleKeyDown = (e: KeyboardEvent): void => {
-    if (this.paused || this.engine.gameOver) return;
+    if (this.paused || this.engine.gameOver || performance.now() < this.freezeUntil) return;
 
     switch (e.code) {
       case "ArrowLeft":

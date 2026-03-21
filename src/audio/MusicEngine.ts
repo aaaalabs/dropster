@@ -23,6 +23,9 @@ export class MusicEngine {
   private masterGain: GainNode | null = null;
   private patternB = false;
   private noiseBuffer: AudioBuffer | null = null;
+  private totalSteps = 0; // lifetime step counter for build-up tracking
+  private padOscs: OscillatorNode[] = [];
+  private padGain: GainNode | null = null;
 
   get muted(): boolean { return this._muted; }
   set muted(val: boolean) {
@@ -47,8 +50,12 @@ export class MusicEngine {
 
   stop(): void {
     if (this.intervalId !== null) { clearInterval(this.intervalId); this.intervalId = null; }
+    for (const o of this.padOscs) { try { o.stop(); } catch {} }
+    this.padOscs = [];
+    this.padGain = null;
     if (this.ctx) { void this.ctx.close(); this.ctx = null; this.masterGain = null; this.noiseBuffer = null; }
     this.step = 0;
+    this.totalSteps = 0;
     this.patternB = false;
   }
 
@@ -100,6 +107,13 @@ export class MusicEngine {
     if (this.step % 2 === 0) this.playHiHat(local % 2 === 1 ? 0.35 : 0.2);
     if (extreme) setTimeout(() => { if (this.ctx) this.playHiHat(0.15); }, stepDur * 500);
 
+    // Chorus pad — fades in after 64 steps (~2 full cycles), plays sustained chord
+    if (this.totalSteps >= 64 && local === 0) {
+      const buildUp = Math.min((this.totalSteps - 64) / 64, 1); // 0→1 over next 64 steps
+      this.playPad(chord, stepDur * 8, buildUp * 0.15);
+    }
+
+    this.totalSteps++;
     this.step = (this.step + 1) % 32;
     if (this.step === 0) this.patternB = !this.patternB;
   }
@@ -159,6 +173,45 @@ export class MusicEngine {
     click.connect(ce).connect(this.masterGain);
     click.start(t);
     click.stop(t + 0.01);
+  }
+
+  private playPad(chord: Chord, dur: number, gain: number): void {
+    if (!this.ctx || !this.masterGain || gain < 0.01) return;
+    const t = this.ctx.currentTime;
+
+    // Kill previous pad oscillators
+    for (const o of this.padOscs) { try { o.stop(t + 0.05); } catch {} }
+    this.padOscs = [];
+
+    if (!this.padGain) {
+      this.padGain = this.ctx.createGain();
+      const lp = this.ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 1200;
+      this.padGain.connect(lp);
+      lp.connect(this.masterGain);
+    }
+
+    // Slow attack, sustained, soft release
+    this.padGain.gain.cancelScheduledValues(t);
+    this.padGain.gain.setValueAtTime(0, t);
+    this.padGain.gain.linearRampToValueAtTime(gain, t + dur * 0.3); // slow swell
+    this.padGain.gain.setValueAtTime(gain, t + dur * 0.7);
+    this.padGain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+
+    // 3 notes of chord, each with 2 slightly detuned oscillators = warm pad
+    for (const freq of [chord.root, chord.third, chord.fifth]) {
+      for (const detune of [-4, 4]) {
+        const osc = this.ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.value = freq;
+        osc.detune.value = detune;
+        osc.connect(this.padGain);
+        osc.start(t);
+        osc.stop(t + dur + 0.1);
+        this.padOscs.push(osc);
+      }
+    }
   }
 
   private playHiHat(gain: number): void {
