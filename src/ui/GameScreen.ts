@@ -73,6 +73,7 @@ export class GameScreen {
     this.canvas.height = BOARD_OFFSET_Y + ROWS * CELL_SIZE + 40;
     this.canvas.style.maxWidth = "100vw";
     this.canvas.style.maxHeight = "100vh";
+    this.canvas.style.touchAction = "none";
     parent.appendChild(this.canvas);
 
     this.renderer = new Renderer(this.canvas);
@@ -632,11 +633,14 @@ export class GameScreen {
     btn.className = "mute-btn";
     const update = (): void => { btn.textContent = this.sound.muted ? "\uD83D\uDD07" : "\uD83D\uDD0A"; };
     update();
-    btn.addEventListener("click", () => {
+    const toggle = (): void => {
       this.sound.toggleMute();
       this.music.muted = this.sound.muted;
       update();
-    });
+    };
+    btn.style.touchAction = "manipulation";
+    btn.addEventListener("click", toggle);
+    btn.addEventListener("touchend", (e) => { e.preventDefault(); toggle(); }, { passive: false });
     parent.style.position = "relative";
     parent.appendChild(btn);
     return btn;
@@ -648,7 +652,9 @@ export class GameScreen {
     btn.textContent = "✕";
     btn.style.right = "auto";
     btn.style.left = "8px";
+    btn.style.touchAction = "manipulation";
     btn.addEventListener("click", () => this.onQuit?.());
+    btn.addEventListener("touchend", (e) => { e.preventDefault(); this.onQuit?.(); }, { passive: false });
     parent.appendChild(btn);
     return btn;
   }

@@ -32,11 +32,11 @@ export class GameOverScreen {
         ${opponentHtml}
         <p class="gameover-score" style="font-size:clamp(24px,6vw,36px);">Score <span style="font-size:clamp(32px,8vw,48px);">${score.toLocaleString()}</span></p>
         ${highScoreHtml}
-        <div style="display:flex; gap:12px; justify-content:center;">
-          <button id="btn-rematch" class="lobby-btn btn-primary" style="min-width:140px;">
+        <div style="display:flex; gap:12px; justify-content:center; margin-top:16px;">
+          <button id="btn-rematch" class="lobby-btn btn-primary" style="min-width:140px; min-height:52px; touch-action:manipulation;">
             Rematch
           </button>
-          <button id="btn-lobby" class="lobby-btn btn-ghost" style="min-width:140px;">
+          <button id="btn-lobby" class="lobby-btn btn-ghost" style="min-width:140px; min-height:52px; touch-action:manipulation;">
             Lobby
           </button>
         </div>
@@ -44,8 +44,18 @@ export class GameOverScreen {
     `;
     parent.appendChild(this.overlay);
 
-    this.overlay.querySelector("#btn-rematch")!.addEventListener("click", onRematch);
-    this.overlay.querySelector("#btn-lobby")!.addEventListener("click", onLobby);
+    this.tapButton("#btn-rematch", onRematch);
+    this.tapButton("#btn-lobby", onLobby);
+  }
+
+  private tapButton(selector: string, callback: () => void): void {
+    const btn = this.overlay.querySelector(selector) as HTMLElement;
+    if (!btn) return;
+    btn.addEventListener("click", callback);
+    btn.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      callback();
+    }, { passive: false });
   }
 
   destroy(): void {

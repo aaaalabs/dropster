@@ -36,7 +36,6 @@
       min-height: 100vh;
       min-height: 100dvh;
       overflow: hidden;
-      touch-action: none;
     }
 
     /* Animated background grid */
@@ -155,6 +154,8 @@
       transition: all 0.2s ease;
       overflow: hidden;
       white-space: nowrap;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .lobby-btn::before {
