@@ -232,7 +232,28 @@ export class SoundEngine {
     });
   }
 
+  announce(text: string, opts?: { pitch?: number; rate?: number }): void {
+    if (this._muted) return;
+    if (!('speechSynthesis' in window)) return;
+
+    // Cancel any ongoing announcement
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.pitch = opts?.pitch ?? 0.4;   // low and robotic
+    utterance.rate = opts?.rate ?? 1.3;      // slightly fast = urgent
+    utterance.volume = 0.7;
+
+    // Prefer an English voice
+    const voices = window.speechSynthesis.getVoices();
+    const english = voices.find(v => v.lang.startsWith("en"));
+    if (english) utterance.voice = english;
+
+    window.speechSynthesis.speak(utterance);
+  }
+
   stopAll(): void {
+    window.speechSynthesis?.cancel();
     if (this.ctx) {
       this.ctx.close();
       this.ctx = null;

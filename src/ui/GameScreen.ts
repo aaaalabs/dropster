@@ -135,6 +135,7 @@ export class GameScreen {
             duration: 1500,
             vy: -0.8,
           });
+          this.sound.announce(`COMBO ${this.engine.combo}!`, { pitch: 0.4, rate: 1.4 });
         }
       }
     };
@@ -150,6 +151,7 @@ export class GameScreen {
           duration: 2000,
           vy: -0.5,
         });
+        this.sound.announce("TETRIS!");
       }
       if (event === "back-to-back") {
         this.effects.addPopup("BACK TO BACK!", centerX, centerY - 40, {
@@ -158,6 +160,7 @@ export class GameScreen {
           duration: 2000,
           vy: -0.8,
         });
+        this.sound.announce("BACK TO BACK!", { pitch: 0.3, rate: 1.1 });
       }
       if (event === "level-up") {
         this.effects.addPopup(`LEVEL ${this.engine.level + 1}`, centerX, centerY, {
@@ -167,6 +170,7 @@ export class GameScreen {
           vy: -0.8,
         });
         this.music.setLevel(this.engine.level);
+        this.sound.announce(`LEVEL ${this.engine.level + 1}`, { pitch: 0.5, rate: 1.4 });
       }
       if (event === "close-call") {
         this.effects.addPopup("CLOSE CALL!", centerX, centerY - 30, {
@@ -178,6 +182,7 @@ export class GameScreen {
         this.particles.burst(centerX, centerY, 20, {
           color: "#ff8800", speed: 3, life: 30, size: 3,
         });
+        this.sound.announce("CLOSE CALL!", { pitch: 0.6, rate: 1.5 });
       }
       if (event === "speed-kill") {
         this.effects.addPopup("SPEED KILL!", BOARD_OFFSET_X + 140, BOARD_OFFSET_Y + 30, {
@@ -186,6 +191,7 @@ export class GameScreen {
           duration: 1200,
           vy: -0.8,
         });
+        this.sound.announce("FAST!", { pitch: 0.3, rate: 1.6 });
       }
       if (event === "perfect-clear") {
         this.effects.flashScreen("#00f0f0", 300);
@@ -199,6 +205,7 @@ export class GameScreen {
           color: "#ffd700", speed: 5, life: 50, size: 4, gravity: 0.05,
         });
         this.freezeUntil = performance.now() + 600;
+        this.sound.announce("PERFECT!", { pitch: 0.2, rate: 1.0 });
       }
       if (event === "new-highscore") {
         this.effects.addPopup("NEW BEST!", centerX, centerY + 40, {
@@ -207,6 +214,7 @@ export class GameScreen {
           duration: 2000,
           vy: -0.5,
         });
+        this.sound.announce("NEW RECORD!", { pitch: 0.3, rate: 1.1 });
       }
     };
 
