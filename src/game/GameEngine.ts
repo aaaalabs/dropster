@@ -5,6 +5,7 @@ import { BagRandomizer } from "./BagRandomizer";
 import { GarbageManager } from "./GarbageManager";
 import {
   COLS,
+  ROWS,
   SCORING,
   SPEED_INITIAL,
   SPEED_DECREASE_PER_LEVEL,
@@ -20,11 +21,15 @@ export class GameEngine {
   score = 0;
   combo = 0;
   gameOver = false;
+  level = 0;
+  lastClearWasTetris = false;
+  isBackToBack = false;
 
   onGarbage: ((lines: number) => void) | null = null;
   onBoardUpdate: (() => void) | null = null;
   onGameOver: (() => void) | null = null;
   onLineClear: ((count: number, rows: number[]) => void) | null = null;
+  onSpecialEvent: ((event: string) => void) | null = null;
 
   private bag = new BagRandomizer();
   private holdUsed = false;
@@ -92,9 +97,23 @@ export class GameEngine {
     this.heldPiece = currentType;
   }
 
+  getBoardFillPercent(): number {
+    let filled = 0;
+    for (const row of this.board.grid) {
+      for (const cell of row) {
+        if (cell !== 0) filled++;
+      }
+    }
+    return filled / (COLS * ROWS);
+  }
+
   getDropInterval(elapsed: number): number {
-    const level = Math.floor(elapsed / LEVEL_INTERVAL_MS);
-    return Math.max(SPEED_MIN, SPEED_INITIAL - level * SPEED_DECREASE_PER_LEVEL);
+    const newLevel = Math.floor(elapsed / LEVEL_INTERVAL_MS);
+    if (newLevel !== this.level) {
+      this.level = newLevel;
+      this.onSpecialEvent?.("level-up");
+    }
+    return Math.max(SPEED_MIN, SPEED_INITIAL - this.level * SPEED_DECREASE_PER_LEVEL);
   }
 
   tick(_elapsed: number): void {
@@ -167,6 +186,20 @@ export class GameEngine {
       this.combo++;
 
       this.onLineClear?.(cleared, clearedRows);
+
+      if (cleared === 4) {
+        this.onSpecialEvent?.("tetris");
+        if (this.lastClearWasTetris) {
+          this.isBackToBack = true;
+          this.onSpecialEvent?.("back-to-back");
+        } else {
+          this.isBackToBack = false;
+        }
+        this.lastClearWasTetris = true;
+      } else {
+        this.lastClearWasTetris = false;
+        this.isBackToBack = false;
+      }
 
       const garbageToSend = this.garbageManager.calcGarbageToSend(cleared, Math.max(0, this.combo - 1));
       const netGarbage = this.garbageManager.counterGarbage(garbageToSend);

@@ -1,6 +1,9 @@
 import { Renderer } from "./Renderer";
 import { GameEngine } from "../game/GameEngine";
 import { SoundEngine } from "../audio/SoundEngine";
+import { ParticleSystem } from "../effects/ParticleSystem";
+import { ScreenEffects } from "../effects/ScreenEffects";
+import { MusicEngine } from "../audio/MusicEngine";
 import { TouchControls } from "./TouchControls";
 import {
   DAS_DELAY,
@@ -24,6 +27,9 @@ export class GameScreen {
   private renderer: Renderer;
   private engine: GameEngine;
   private sound: SoundEngine;
+  private particles = new ParticleSystem();
+  private effects = new ScreenEffects();
+  private music = new MusicEngine();
   private touch: TouchControls;
   private muteBtn: HTMLElement;
   private opponentGrid: number[][] = [];
@@ -73,6 +79,80 @@ export class GameScreen {
       this.sound.lineClear(count);
       this.flashRows = rows;
       this.flashExpiresAt = performance.now() + LINE_FLASH_MS;
+
+      // Particles: burst from each cleared row
+      for (const row of rows) {
+        const y = BOARD_OFFSET_Y + row * CELL_SIZE + CELL_SIZE / 2;
+        const x = BOARD_OFFSET_X + (COLS * CELL_SIZE) / 2;
+        this.particles.burstRow(x, y, COLS * CELL_SIZE, count === 4 ? 20 : 8, {
+          color: count === 4 ? "#00f0f0" : "#fff",
+          speed: count === 4 ? 5 : 3,
+          life: count === 4 ? 35 : 25,
+          gravity: 0.1,
+        });
+      }
+
+      // Screen flash for tetris
+      if (count === 4) {
+        this.effects.flashScreen("#fff", 100);
+      }
+
+      // Score popup
+      const scoreKey = ["single", "double", "triple", "tetris"][count - 1];
+      const scores = { single: 100, double: 300, triple: 500, tetris: 800 };
+      const pts = scores[scoreKey as keyof typeof scores] || 0;
+      this.effects.addPopup(`+${pts}`, BOARD_OFFSET_X + 140, BOARD_OFFSET_Y + rows[0] * CELL_SIZE, {
+        color: "#fff",
+        font: "bold 14px Orbitron, monospace",
+        duration: 800,
+      });
+
+      // Combo particles
+      if (this.engine.combo >= 3) {
+        this.particles.burst(20, BOARD_OFFSET_Y + 220, 6, {
+          color: "#ff00aa",
+          speed: 2,
+          life: 20,
+          size: 2,
+        });
+        if (this.engine.combo >= 5) {
+          this.effects.addPopup(`COMBO \u00d7${this.engine.combo}`, BOARD_OFFSET_X + 140, BOARD_OFFSET_Y + 50, {
+            color: "#ff00aa",
+            font: "bold 16px Orbitron, monospace",
+            duration: 1000,
+          });
+        }
+      }
+    };
+
+    this.engine.onSpecialEvent = (event) => {
+      const centerX = BOARD_OFFSET_X + (COLS * CELL_SIZE) / 2;
+      const centerY = BOARD_OFFSET_Y + (ROWS * CELL_SIZE) / 2;
+
+      if (event === "tetris") {
+        this.effects.addPopup("TETRIS!", centerX, centerY, {
+          color: "#00f0f0",
+          font: "bold 28px Orbitron, monospace",
+          duration: 1500,
+          vy: -1,
+        });
+      }
+      if (event === "back-to-back") {
+        this.effects.addPopup("BACK TO BACK!", centerX, centerY - 40, {
+          color: "#ffd700",
+          font: "bold 20px Orbitron, monospace",
+          duration: 1500,
+          vy: -0.8,
+        });
+      }
+      if (event === "level-up") {
+        this.effects.addPopup(`LEVEL ${this.engine.level + 1}`, centerX, centerY, {
+          color: "#a855f7",
+          font: "bold 18px Orbitron, monospace",
+          duration: 1200,
+        });
+        this.music.setLevel(this.engine.level);
+      }
     };
 
     this.touch = new TouchControls(this.canvas, {
@@ -83,6 +163,7 @@ export class GameScreen {
         this.engine.hardDrop();
         this.sound.hardDrop();
         this.lastGravityDrop = performance.now();
+        this.effects.flashScreen("rgba(0,240,240,0.15)", 50);
       },
       onRotateCW: () => { this.engine.rotateCW(); this.sound.rotate(); },
       onRotateCCW: () => { this.engine.rotateCCW(); this.sound.rotate(); },
@@ -117,6 +198,8 @@ export class GameScreen {
     this.gameStartTime = now;
     this.shakeLastFrame = now;
     this.engine.start(Date.now());
+    this.music.muted = this.sound.muted;
+    this.music.start();
     this.loop(now);
   }
 
@@ -124,6 +207,16 @@ export class GameScreen {
     this.engine.receiveGarbage(lines);
     this.shakeTimer = 150;
     this.sound.garbageReceived();
+    this.effects.flashScreen("#ff000060", 80);
+    // Particles burst from bottom
+    const bottomY = BOARD_OFFSET_Y + ROWS * CELL_SIZE;
+    this.particles.burst(BOARD_OFFSET_X + (COLS * CELL_SIZE) / 2, bottomY, 10, {
+      color: "#ff3333",
+      speed: 4,
+      spread: Math.PI,
+      baseAngle: -Math.PI / 2,
+      life: 15,
+    });
   }
 
   updateOpponentBoard(grid: number[][]): void {
@@ -154,6 +247,7 @@ export class GameScreen {
     this.removeInput();
     this.touch.destroy();
     this.sound.stopAll();
+    this.music.stop();
     this.muteBtn.remove();
     window.removeEventListener("resize", this.resize);
     this.canvas.remove();
@@ -171,6 +265,11 @@ export class GameScreen {
     }
 
     this.engine.tick(elapsed);
+
+    // Update danger level
+    const fill = this.engine.getBoardFillPercent();
+    this.effects.setDanger(fill);
+    this.music.setDanger(fill);
 
     if (now - this.lastBoardSend > 200) {
       this.onSendBoard?.(this.engine.board.toColorGrid());
@@ -258,6 +357,15 @@ export class GameScreen {
       this.renderer.drawOpponentBoard(this.opponentGrid, OPP_OFFSET_X, OPP_OFFSET_Y);
     }
 
+    // Update and draw particles
+    this.particles.update();
+    this.particles.draw(ctx);
+
+    // Draw screen effects (flash, popups, danger overlay)
+    const boardW = COLS * CELL_SIZE;
+    const boardH = ROWS * CELL_SIZE;
+    this.effects.draw(ctx, now, BOARD_OFFSET_X, BOARD_OFFSET_Y, boardW, boardH);
+
     if (this.shakeTimer > 0) {
       ctx.restore();
     }
@@ -299,6 +407,7 @@ export class GameScreen {
         this.engine.hardDrop();
         this.sound.hardDrop();
         this.lastGravityDrop = performance.now();
+        this.effects.flashScreen("rgba(0,240,240,0.15)", 50);
         break;
       case "Escape":
         this.onQuit?.();
@@ -363,6 +472,7 @@ export class GameScreen {
     update();
     btn.addEventListener("click", () => {
       this.sound.toggleMute();
+      this.music.muted = this.sound.muted;
       update();
     });
     parent.style.position = "relative";

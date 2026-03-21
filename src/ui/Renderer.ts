@@ -192,14 +192,29 @@ export class Renderer {
   drawCountdown(count: number): void {
     this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    this.ctx.fillStyle = "#00f0f0";
-    this.ctx.font = "bold 72px Orbitron, monospace";
+
     this.ctx.textAlign = "center";
+
+    if (count > 0) {
+      this.ctx.fillStyle = "#fff";
+      this.ctx.font = "bold 90px Orbitron, monospace";
+      this.ctx.shadowBlur = 20;
+      this.ctx.shadowColor = "#00f0f0";
+    } else {
+      this.ctx.fillStyle = "#00f0f0";
+      this.ctx.font = "bold 100px Orbitron, monospace";
+      this.ctx.shadowBlur = 40;
+      this.ctx.shadowColor = "#00f0f0";
+    }
+
     this.ctx.fillText(
       count > 0 ? String(count) : "GO!",
       this.canvas.width / 2,
       this.canvas.height / 2
     );
+
+    this.ctx.shadowBlur = 0;
+    this.ctx.shadowColor = "transparent";
     this.ctx.textAlign = "start";
   }
 
