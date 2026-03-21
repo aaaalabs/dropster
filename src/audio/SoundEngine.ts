@@ -247,8 +247,9 @@ export class SoundEngine {
 
     if (!this.voiceResolved) {
       const voices = window.speechSynthesis.getVoices();
-      const germanMale = voices.find(v => v.lang.startsWith("de") && /male|mann|martin|stefan|hans/i.test(v.name) && !/female|frau/i.test(v.name));
-      this.cachedVoice = germanMale ?? voices.find(v => v.lang.startsWith("de")) ?? null;
+      // Prefer a deep English male voice
+      const male = voices.find(v => v.lang.startsWith("en") && /male|daniel|james|tom|david/i.test(v.name) && !/female/i.test(v.name));
+      this.cachedVoice = male ?? voices.find(v => v.lang.startsWith("en")) ?? null;
       this.voiceResolved = true;
     }
     if (this.cachedVoice) utterance.voice = this.cachedVoice;

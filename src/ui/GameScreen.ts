@@ -137,7 +137,7 @@ export class GameScreen {
             duration: 1500,
             vy: -0.8,
           });
-          this.sound.announce(`Combo ${this.engine.combo}!`, { pitch: 0.1, rate: 0.9 });
+          this.sound.announce("Combo attack!");
         }
       }
     };
@@ -153,7 +153,7 @@ export class GameScreen {
           duration: 2000,
           vy: -0.5,
         });
-        this.sound.announce("TETRIS!", { pitch: 0.1, rate: 0.9 });
+        this.sound.announce("Tetris!");
       }
       if (event === "back-to-back") {
         this.effects.addPopup("BACK TO BACK!", centerX, centerY - 40, {
@@ -162,7 +162,7 @@ export class GameScreen {
           duration: 2000,
           vy: -0.8,
         });
-        this.sound.announce("Doppelschlag!", { pitch: 0.1, rate: 0.9 });
+        this.sound.announce("Double strike!");
       }
       if (event === "level-up") {
         this.effects.addPopup(`LEVEL ${this.engine.level + 1}`, centerX, centerY, {
@@ -172,10 +172,10 @@ export class GameScreen {
           vy: -0.8,
         });
         this.music.setLevel(this.engine.level);
-        this.sound.announce(`Level ${this.engine.level + 1}`, { pitch: 0.1, rate: 0.9 });
+        // No voice — too frequent, not special enough
       }
       if (event === "close-call") {
-        this.effects.addPopup("KNAPP!", centerX, centerY - 30, {
+        this.effects.addPopup("CLOSE CALL!", centerX, centerY - 30, {
           color: "#ff8800",
           font: "bold 22px Orbitron, monospace",
           duration: 1800,
@@ -184,20 +184,20 @@ export class GameScreen {
         this.particles.burst(centerX, centerY, 20, {
           color: "#ff8800", speed: 3, life: 30, size: 3,
         });
-        this.sound.announce("Knapp!", { pitch: 0.1, rate: 0.9 });
+        // No voice — happens too often
       }
       if (event === "speed-kill") {
-        this.effects.addPopup("BLITZ!", BOARD_OFFSET_X + 140, BOARD_OFFSET_Y + 30, {
+        this.effects.addPopup("BONUS!", BOARD_OFFSET_X + 140, BOARD_OFFSET_Y + 30, {
           color: "#00ff88",
           font: "bold 14px Orbitron, monospace",
           duration: 1200,
           vy: -0.8,
         });
-        this.sound.announce("Blitzschnell!", { pitch: 0.1, rate: 0.9 });
+        // No voice — minor event
       }
       if (event === "perfect-clear") {
         this.effects.flashScreen("#00f0f0", 300);
-        this.effects.addPopup("PERFEKT!", centerX, centerY, {
+        this.effects.addPopup("PERFECT!", centerX, centerY, {
           color: "#ffd700",
           font: "bold 28px Orbitron, monospace",
           duration: 2500,
@@ -207,16 +207,16 @@ export class GameScreen {
           color: "#ffd700", speed: 5, life: 50, size: 4, gravity: 0.05,
         });
         this.freezeUntil = performance.now() + 600;
-        this.sound.announce("Perfekt!", { pitch: 0.1, rate: 0.9 });
+        this.sound.announce("Perfect clear!");
       }
       if (event === "new-highscore") {
-        this.effects.addPopup("NEUER REKORD!", centerX, centerY + 40, {
+        this.effects.addPopup("NEW RECORD!", centerX, centerY + 40, {
           color: "#ffd700",
           font: "bold 20px Orbitron, monospace",
           duration: 2000,
           vy: -0.5,
         });
-        this.sound.announce("Neuer Rekord!", { pitch: 0.1, rate: 0.9 });
+        this.sound.announce("New record!");
       }
     };
 
