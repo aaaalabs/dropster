@@ -89,9 +89,9 @@ export const WALL_KICKS_I: Record<string, number[][]> = {
 };
 
 export const SPEED_INITIAL = 1000;
-export const SPEED_DECREASE_PER_LEVEL = 100;
-export const SPEED_MIN = 100;
-export const LEVEL_INTERVAL_MS = 60000;
+export const SPEED_DECREASE_PER_LEVEL = 50;
+export const SPEED_MIN = 200;
+export const LEVEL_INTERVAL_MS = 90000;
 
 export const DAS_DELAY = 170;
 export const ARR_DELAY = 50;

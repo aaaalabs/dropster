@@ -236,18 +236,17 @@ export class SoundEngine {
     if (this._muted) return;
     if (!('speechSynthesis' in window)) return;
 
-    // Cancel any ongoing announcement
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.pitch = opts?.pitch ?? 0.4;   // low and robotic
-    utterance.rate = opts?.rate ?? 1.3;      // slightly fast = urgent
-    utterance.volume = 0.7;
+    utterance.pitch = opts?.pitch ?? 0.1;   // very low = robotic
+    utterance.rate = opts?.rate ?? 1.2;
+    utterance.volume = 0.8;
 
-    // Prefer an English voice
+    // Prefer German voice for German-speaking kids
     const voices = window.speechSynthesis.getVoices();
-    const english = voices.find(v => v.lang.startsWith("en"));
-    if (english) utterance.voice = english;
+    const german = voices.find(v => v.lang.startsWith("de"));
+    if (german) utterance.voice = german;
 
     window.speechSynthesis.speak(utterance);
   }

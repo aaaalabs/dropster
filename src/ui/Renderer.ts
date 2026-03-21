@@ -243,6 +243,79 @@ export class Renderer {
     this.ctx.fillRect(offsetX, offsetY + y * CELL_SIZE, this.boardWidth, CELL_SIZE);
   }
 
+  /**
+   * Draw snapshotted cleared rows with phased animation.
+   * progress: 0→1 over the freeze duration
+   * Phase 1 (0-0.3): rows flash white, glow intensifies
+   * Phase 2 (0.3-0.6): rows visible with original colors, shrinking height
+   * Phase 3 (0.6-1.0): rows dissolve (alpha fades out, cells scatter)
+   */
+  drawClearingRows(
+    snapshots: { row: number; cells: number[] }[],
+    offsetX: number,
+    offsetY: number,
+    progress: number
+  ): void {
+    if (progress >= 1) return;
+
+    this.ctx.save();
+
+    for (const { row, cells } of snapshots) {
+      const baseY = offsetY + row * CELL_SIZE;
+
+      if (progress < 0.3) {
+        // Phase 1: white flash glow
+        const p = progress / 0.3;
+        const glowAlpha = 0.4 + p * 0.5;
+        this.ctx.shadowBlur = 15 + p * 25;
+        this.ctx.shadowColor = "#fff";
+        this.ctx.fillStyle = `rgba(255,255,255,${glowAlpha})`;
+        this.ctx.fillRect(offsetX, baseY, this.boardWidth, CELL_SIZE);
+      } else if (progress < 0.6) {
+        // Phase 2: original colors, shrinking vertically
+        const p = (progress - 0.3) / 0.3;
+        const shrink = 1 - p * 0.5; // shrink to 50%
+        const cellH = CELL_SIZE * shrink;
+        const yOff = (CELL_SIZE - cellH) / 2;
+        this.ctx.globalAlpha = 1 - p * 0.3;
+        for (let x = 0; x < COLS; x++) {
+          if (cells[x] !== 0) {
+            const color = COLOR_MAP[cells[x]] ?? GARBAGE_COLOR;
+            this.ctx.shadowBlur = 8;
+            this.ctx.shadowColor = color;
+            this.ctx.fillStyle = color;
+            this.ctx.fillRect(
+              offsetX + x * CELL_SIZE + 1,
+              baseY + yOff + 1,
+              CELL_SIZE - 2,
+              cellH - 2
+            );
+          }
+        }
+      } else {
+        // Phase 3: dissolve — cells scatter outward, fade
+        const p = (progress - 0.6) / 0.4;
+        this.ctx.globalAlpha = 1 - p;
+        for (let x = 0; x < COLS; x++) {
+          if (cells[x] !== 0) {
+            const color = COLOR_MAP[cells[x]] ?? GARBAGE_COLOR;
+            const scatter = p * 30;
+            const dir = x < COLS / 2 ? -1 : 1;
+            const sx = offsetX + x * CELL_SIZE + dir * scatter;
+            const sy = baseY + (Math.random() - 0.5) * scatter * 0.5;
+            const size = CELL_SIZE * (1 - p * 0.5);
+            this.ctx.shadowBlur = 6;
+            this.ctx.shadowColor = color;
+            this.ctx.fillStyle = color;
+            this.ctx.fillRect(sx, sy, size, size);
+          }
+        }
+      }
+    }
+
+    this.ctx.restore();
+  }
+
   private drawCell(x: number, y: number, size: number, color: string): void {
     this.ctx.shadowBlur = 6;
     this.ctx.shadowColor = color;

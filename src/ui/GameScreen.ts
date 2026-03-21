@@ -19,7 +19,6 @@ const BOARD_OFFSET_X = SIDE_PANEL_WIDTH + 20;
 const BOARD_OFFSET_Y = 40;
 const OPP_OFFSET_X = BOARD_OFFSET_X + COLS * CELL_SIZE + 30;
 const OPP_OFFSET_Y = BOARD_OFFSET_Y + 30;
-const LINE_FLASH_MS = 250;
 const SHAKE_AMPLITUDE = 3;
 
 export class GameScreen {
@@ -44,9 +43,10 @@ export class GameScreen {
   private shakeTimer = 0;
   private shakeLastFrame = 0;
 
-  // Line clear flash: { rows, expiresAt }
-  private flashRows: number[] = [];
-  private flashExpiresAt = 0;
+  // Line clear animation state
+  private clearSnapshots: { row: number; cells: number[] }[] = [];
+  private clearAnimStart = 0;
+  private clearAnimDuration = 0;
 
   // Hit stop: freeze game logic briefly on line clears
   private freezeUntil = 0;
@@ -78,16 +78,18 @@ export class GameScreen {
       setTimeout(() => this.sound.stopAll(), 1000);
       this.onGameOver?.();
     };
-    this.engine.onLineClear = (count, rows) => {
+    this.engine.onLineClear = (count, rows, snapshots) => {
       this.sound.lineClear(count);
-      this.flashRows = rows;
-      this.flashExpiresAt = performance.now() + LINE_FLASH_MS;
 
       // Hit stop — freeze game logic so the moment breathes
-      // 1 line = 300ms, 2 = 500ms, 3 = 700ms, Tetris = 1000ms
-      const freezeMs = count === 4 ? 1000 : 100 + count * 200;
-      this.freezeUntil = performance.now() + freezeMs;
-      this.flashExpiresAt = performance.now() + freezeMs * 0.6; // flash lasts 60% of freeze
+      const freezeMs = count === 4 ? 1200 : 150 + count * 250;
+      const now = performance.now();
+      this.freezeUntil = now + freezeMs;
+
+      // Store row snapshots for phased clear animation
+      this.clearSnapshots = snapshots;
+      this.clearAnimStart = now;
+      this.clearAnimDuration = freezeMs;
 
       // Particles: burst from each cleared row
       for (const row of rows) {
@@ -135,7 +137,7 @@ export class GameScreen {
             duration: 1500,
             vy: -0.8,
           });
-          this.sound.announce(`COMBO ${this.engine.combo}!`, { pitch: 0.4, rate: 1.4 });
+          this.sound.announce(`Combo ${this.engine.combo}!`, { pitch: 0.1, rate: 1.2 });
         }
       }
     };
@@ -151,7 +153,7 @@ export class GameScreen {
           duration: 2000,
           vy: -0.5,
         });
-        this.sound.announce("TETRIS!");
+        this.sound.announce("TETRIS!", { pitch: 0.1, rate: 1.0 });
       }
       if (event === "back-to-back") {
         this.effects.addPopup("BACK TO BACK!", centerX, centerY - 40, {
@@ -160,7 +162,7 @@ export class GameScreen {
           duration: 2000,
           vy: -0.8,
         });
-        this.sound.announce("BACK TO BACK!", { pitch: 0.3, rate: 1.1 });
+        this.sound.announce("Doppelschlag!", { pitch: 0.1, rate: 1.0 });
       }
       if (event === "level-up") {
         this.effects.addPopup(`LEVEL ${this.engine.level + 1}`, centerX, centerY, {
@@ -170,10 +172,10 @@ export class GameScreen {
           vy: -0.8,
         });
         this.music.setLevel(this.engine.level);
-        this.sound.announce(`LEVEL ${this.engine.level + 1}`, { pitch: 0.5, rate: 1.4 });
+        this.sound.announce(`Level ${this.engine.level + 1}`, { pitch: 0.1, rate: 1.2 });
       }
       if (event === "close-call") {
-        this.effects.addPopup("CLOSE CALL!", centerX, centerY - 30, {
+        this.effects.addPopup("KNAPP!", centerX, centerY - 30, {
           color: "#ff8800",
           font: "bold 22px Orbitron, monospace",
           duration: 1800,
@@ -182,20 +184,20 @@ export class GameScreen {
         this.particles.burst(centerX, centerY, 20, {
           color: "#ff8800", speed: 3, life: 30, size: 3,
         });
-        this.sound.announce("CLOSE CALL!", { pitch: 0.6, rate: 1.5 });
+        this.sound.announce("Knapp!", { pitch: 0.1, rate: 1.3 });
       }
       if (event === "speed-kill") {
-        this.effects.addPopup("SPEED KILL!", BOARD_OFFSET_X + 140, BOARD_OFFSET_Y + 30, {
+        this.effects.addPopup("SCHNELL!", BOARD_OFFSET_X + 140, BOARD_OFFSET_Y + 30, {
           color: "#00ff88",
           font: "bold 14px Orbitron, monospace",
           duration: 1200,
           vy: -0.8,
         });
-        this.sound.announce("FAST!", { pitch: 0.3, rate: 1.6 });
+        this.sound.announce("Schnell!", { pitch: 0.1, rate: 1.4 });
       }
       if (event === "perfect-clear") {
         this.effects.flashScreen("#00f0f0", 300);
-        this.effects.addPopup("PERFECT CLEAR!", centerX, centerY, {
+        this.effects.addPopup("PERFEKT!", centerX, centerY, {
           color: "#ffd700",
           font: "bold 28px Orbitron, monospace",
           duration: 2500,
@@ -205,16 +207,16 @@ export class GameScreen {
           color: "#ffd700", speed: 5, life: 50, size: 4, gravity: 0.05,
         });
         this.freezeUntil = performance.now() + 600;
-        this.sound.announce("PERFECT!", { pitch: 0.2, rate: 1.0 });
+        this.sound.announce("Perfekt!", { pitch: 0.1, rate: 0.9 });
       }
       if (event === "new-highscore") {
-        this.effects.addPopup("NEW BEST!", centerX, centerY + 40, {
+        this.effects.addPopup("NEUER REKORD!", centerX, centerY + 40, {
           color: "#ffd700",
           font: "bold 20px Orbitron, monospace",
           duration: 2000,
           vy: -0.5,
         });
-        this.sound.announce("NEW RECORD!", { pitch: 0.3, rate: 1.1 });
+        this.sound.announce("Neuer Rekord!", { pitch: 0.1, rate: 1.0 });
       }
     };
 
@@ -407,11 +409,10 @@ export class GameScreen {
 
     this.renderer.drawPiece(this.engine.currentPiece, BOARD_OFFSET_X, BOARD_OFFSET_Y);
 
-    // Line clear flash overlay
-    if (now < this.flashExpiresAt) {
-      for (const row of this.flashRows) {
-        this.renderer.drawLineClearFlash(row, BOARD_OFFSET_X, BOARD_OFFSET_Y);
-      }
+    // Phased line clear animation (draws snapshotted rows over the cleared area)
+    if (this.clearAnimDuration > 0 && now < this.clearAnimStart + this.clearAnimDuration) {
+      const progress = (now - this.clearAnimStart) / this.clearAnimDuration;
+      this.renderer.drawClearingRows(this.clearSnapshots, BOARD_OFFSET_X, BOARD_OFFSET_Y, progress);
     }
 
     this.renderer.drawGarbageIndicator(

@@ -45,6 +45,10 @@ export class Board {
     return rows;
   }
 
+  snapshotRows(rowIndices: number[]): { row: number; cells: Cell[] }[] {
+    return rowIndices.map(y => ({ row: y, cells: [...this.grid[y]] }));
+  }
+
   addGarbageLines(count: number, gapColumns: number[]): void {
     this.grid.splice(0, count);
     for (let i = count - 1; i >= 0; i--) {

@@ -28,7 +28,7 @@ export class GameEngine {
   onGarbage: ((lines: number) => void) | null = null;
   onBoardUpdate: (() => void) | null = null;
   onGameOver: (() => void) | null = null;
-  onLineClear: ((count: number, rows: number[]) => void) | null = null;
+  onLineClear: ((count: number, rows: number[], snapshots: { row: number; cells: number[] }[]) => void) | null = null;
   onSpecialEvent: ((event: string) => void) | null = null;
 
   private bag = new BagRandomizer();
@@ -199,6 +199,7 @@ export class GameEngine {
   private lockPiece(): void {
     this.board.placePiece(this.currentPiece);
     const clearedRows = this.board.getFullRows();
+    const rowSnapshots = this.board.snapshotRows(clearedRows);
     const cleared = this.board.clearFullRows();
 
     if (cleared > 0) {
@@ -208,7 +209,7 @@ export class GameEngine {
       this.score += Math.floor(baseScore * multiplier);
       this.combo++;
 
-      this.onLineClear?.(cleared, clearedRows);
+      this.onLineClear?.(cleared, clearedRows, rowSnapshots);
 
       if (cleared === 4) {
         this.onSpecialEvent?.("tetris");
