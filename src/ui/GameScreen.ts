@@ -60,7 +60,7 @@ export class GameScreen {
   private lastBoardSend = 0;
   private paused = false;
 
-  constructor(parent: HTMLElement) {
+  constructor(parent: HTMLElement, difficulty: string = "normal") {
     this.canvas = document.createElement("canvas");
     this.canvas.width = OPP_OFFSET_X + COLS * MINI_CELL_SIZE + 20;
     this.canvas.height = BOARD_OFFSET_Y + ROWS * CELL_SIZE + 40;
@@ -69,7 +69,7 @@ export class GameScreen {
     parent.appendChild(this.canvas);
 
     this.renderer = new Renderer(this.canvas);
-    this.engine = new GameEngine();
+    this.engine = new GameEngine(difficulty);
     this.sound = new SoundEngine();
 
     this.engine.onGarbage = (lines) => this.onSendGarbage?.(lines);

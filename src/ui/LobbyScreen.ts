@@ -4,8 +4,10 @@ export interface LobbyCallbacks {
   onSolo: () => void;
 }
 
+
 export class LobbyScreen {
   private container: HTMLDivElement;
+  selectedDifficulty = "normal";
 
   constructor(parent: HTMLElement, callbacks: LobbyCallbacks) {
     this.container = document.createElement("div");
@@ -21,6 +23,12 @@ export class LobbyScreen {
             <button id="btn-join" class="lobby-btn btn-secondary">Join</button>
           </div>
           <div class="divider"></div>
+          <div id="difficulty-selector" style="display:flex; gap:6px; justify-content:center;">
+            <button data-diff="chill" class="lobby-btn btn-ghost" style="flex:1; padding:10px 0; font-size:10px; opacity:0.5;">CHILL</button>
+            <button data-diff="normal" class="lobby-btn btn-ghost" style="flex:1; padding:10px 0; font-size:10px; border-color:var(--cyan); color:var(--cyan); opacity:1;">NORMAL</button>
+            <button data-diff="hard" class="lobby-btn btn-ghost" style="flex:1; padding:10px 0; font-size:10px; opacity:0.5;">HARD</button>
+            <button data-diff="insane" class="lobby-btn btn-ghost" style="flex:1; padding:10px 0; font-size:10px; opacity:0.5;">INSANE</button>
+          </div>
           <button id="btn-solo" class="lobby-btn btn-ghost">Solo Practice</button>
         </div>
         <div id="lobby-status" class="lobby-status"></div>
@@ -37,6 +45,21 @@ export class LobbyScreen {
       const input = this.container.querySelector("#input-code") as HTMLInputElement;
       const code = input.value.trim().toUpperCase();
       if (code.length === 4) callbacks.onJoinRoom(code);
+    });
+
+    // Difficulty selector
+    const diffBtns = this.container.querySelectorAll("#difficulty-selector button");
+    diffBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        this.selectedDifficulty = (btn as HTMLElement).dataset.diff ?? "normal";
+        diffBtns.forEach(b => {
+          const el = b as HTMLElement;
+          const active = el.dataset.diff === this.selectedDifficulty;
+          el.style.opacity = active ? "1" : "0.5";
+          el.style.borderColor = active ? "var(--cyan)" : "rgba(255,255,255,0.08)";
+          el.style.color = active ? "var(--cyan)" : "var(--text-mid)";
+        });
+      });
     });
 
     // Enter key joins room

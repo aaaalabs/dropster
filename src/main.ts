@@ -124,12 +124,13 @@ function handleDisconnect(): void {
 }
 
 function startGame(): void {
+  const difficulty = lobby?.selectedDifficulty ?? "normal";
   lobbyMusic.stop();
   lobbyMusicStarted = false;
   lobby?.destroy();
   lobby = null;
 
-  gameScreen = new GameScreen(app);
+  gameScreen = new GameScreen(app, difficulty);
 
   gameScreen.onSendGarbage = (lines) => peer?.send({ type: "garbage", lines });
   gameScreen.onSendBoard = (grid) => peer?.send({ type: "board", grid });

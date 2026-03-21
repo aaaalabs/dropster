@@ -7,12 +7,22 @@ import {
   COLS,
   ROWS,
   SCORING,
-  SPEED_INITIAL,
-  SPEED_DECREASE_PER_LEVEL,
-  SPEED_MIN,
-  LEVEL_INTERVAL_MS,
   PIECE_SHAPES,
 } from "./constants";
+
+export interface DifficultyConfig {
+  speedInitial: number;
+  speedDecrease: number;
+  speedMin: number;
+  levelInterval: number;
+}
+
+export const DIFFICULTIES: Record<string, DifficultyConfig> = {
+  chill:  { speedInitial: 1200, speedDecrease: 30, speedMin: 300, levelInterval: 120000 },
+  normal: { speedInitial: 1000, speedDecrease: 50, speedMin: 200, levelInterval: 90000 },
+  hard:   { speedInitial: 700,  speedDecrease: 60, speedMin: 120, levelInterval: 60000 },
+  insane: { speedInitial: 500,  speedDecrease: 50, speedMin: 80,  levelInterval: 45000 },
+};
 
 export class GameEngine {
   board = new Board();
@@ -37,8 +47,10 @@ export class GameEngine {
   private pieceSpawnTime = 0;
   private highScore: number;
   readonly garbageManager = new GarbageManager();
+  private diff: DifficultyConfig;
 
-  constructor() {
+  constructor(difficulty: string = "normal") {
+    this.diff = DIFFICULTIES[difficulty] ?? DIFFICULTIES.normal;
     this.highScore = parseInt(this.localStorageGet("dropster-highscore") ?? "0", 10);
     this.currentPiece = this.spawnPiece();
   }
@@ -129,12 +141,12 @@ export class GameEngine {
   }
 
   getDropInterval(elapsed: number): number {
-    const newLevel = Math.floor(elapsed / LEVEL_INTERVAL_MS);
+    const newLevel = Math.floor(elapsed / this.diff.levelInterval);
     if (newLevel !== this.level) {
       this.level = newLevel;
       this.onSpecialEvent?.("level-up");
     }
-    return Math.max(SPEED_MIN, SPEED_INITIAL - this.level * SPEED_DECREASE_PER_LEVEL);
+    return Math.max(this.diff.speedMin, this.diff.speedInitial - this.level * this.diff.speedDecrease);
   }
 
   tick(_elapsed: number): void {
