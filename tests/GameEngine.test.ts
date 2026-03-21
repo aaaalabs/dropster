@@ -227,24 +227,25 @@ describe("GameEngine", () => {
       expect(engine.getDropInterval(0)).toBe(1000);
     });
 
-    it("returns 900ms at elapsed=60000 (level 1)", () => {
-      expect(engine.getDropInterval(60000)).toBe(900);
+    it("returns 950ms at elapsed=90000 (level 1, normal difficulty)", () => {
+      // normal: speedInitial=1000, speedDecrease=50, levelInterval=90000
+      expect(engine.getDropInterval(90000)).toBe(950);
     });
 
-    it("returns 100ms at elapsed=600000 (level 9, minimum speed)", () => {
-      expect(engine.getDropInterval(600000)).toBe(100);
+    it("clamps to speedMin at very high elapsed", () => {
+      // normal: speedMin=200
+      expect(engine.getDropInterval(9999999)).toBe(200);
     });
 
-    it("does not go below SPEED_MIN (100ms)", () => {
-      // At very large elapsed times, should be clamped to 100
-      expect(engine.getDropInterval(9999999)).toBe(100);
+    it("does not go below speedMin", () => {
+      expect(engine.getDropInterval(99999999)).toBe(200);
     });
 
-    it("decreases by 100ms per level", () => {
+    it("decreases by 50ms per level (normal difficulty)", () => {
       expect(engine.getDropInterval(0)).toBe(1000);
-      expect(engine.getDropInterval(60000)).toBe(900);
-      expect(engine.getDropInterval(120000)).toBe(800);
-      expect(engine.getDropInterval(180000)).toBe(700);
+      expect(engine.getDropInterval(90000)).toBe(950);
+      expect(engine.getDropInterval(180000)).toBe(900);
+      expect(engine.getDropInterval(270000)).toBe(850);
     });
   });
 

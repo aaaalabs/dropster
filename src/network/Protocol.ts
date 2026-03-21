@@ -1,7 +1,7 @@
 export type Message =
   | { type: "ready" }
   | { type: "garbage"; lines: number }
-  | { type: "board"; grid: number[][] }
+  | { type: "board"; grid: number[][]; score?: number }
   | { type: "gameOver" }
   | { type: "pause" }
   | { type: "pauseAccept" }

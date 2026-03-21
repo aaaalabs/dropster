@@ -52,7 +52,7 @@ export class GameScreen {
   private freezeUntil = 0;
 
   onSendGarbage: ((lines: number) => void) | null = null;
-  onSendBoard: ((grid: number[][]) => void) | null = null;
+  onSendBoard: ((grid: number[][], score: number) => void) | null = null;
   onGameOver: (() => void) | null = null;
   onPauseRequest: (() => void) | null = null;
   onQuit: (() => void) | null = null;
@@ -61,8 +61,11 @@ export class GameScreen {
   private paused = false;
 
   private opponentName = "OPPONENT";
+  private playerName: string;
+  private opponentScore = 0;
 
   constructor(parent: HTMLElement, difficulty: string = "normal", player: string = "default", opponent: string = "") {
+    this.playerName = player;
     this.opponentName = opponent || "OPPONENT";
     this.canvas = document.createElement("canvas");
     this.canvas.width = OPP_OFFSET_X + COLS * MINI_CELL_SIZE + 20;
@@ -259,8 +262,8 @@ export class GameScreen {
           gravity: 0.15,
         });
       },
-      onRotateCW: () => { this.engine.rotateCW(); this.sound.rotate(); },
-      onRotateCCW: () => { this.engine.rotateCCW(); this.sound.rotate(); },
+      onRotateCW: () => { if (!this.engine.rotateCW()) this.shakeTimer = 50; this.sound.rotate(); },
+      onRotateCCW: () => { if (!this.engine.rotateCCW()) this.shakeTimer = 50; this.sound.rotate(); },
       onHoldPiece: () => { this.engine.holdPiece(); this.sound.move(); },
     });
 
@@ -302,7 +305,7 @@ export class GameScreen {
     this.shakeTimer = 150;
     this.sound.garbageReceived();
     this.effects.flashScreen("#ff000060", 150);
-    this.effects.addWarning(`INCOMING ×${lines}`);
+    this.effects.addWarning(`${this.opponentName} ×${lines}!`);
     // Particles burst from bottom
     const bottomY = BOARD_OFFSET_Y + ROWS * CELL_SIZE;
     this.particles.burst(BOARD_OFFSET_X + (COLS * CELL_SIZE) / 2, bottomY, 10, {
@@ -316,6 +319,10 @@ export class GameScreen {
 
   updateOpponentBoard(grid: number[][]): void {
     this.opponentGrid = grid;
+  }
+
+  updateOpponentScore(score: number): void {
+    this.opponentScore = score;
   }
 
   setPaused(paused: boolean): void {
@@ -383,7 +390,7 @@ export class GameScreen {
     }
 
     if (now - this.lastBoardSend > 200) {
-      this.onSendBoard?.(this.engine.board.toColorGrid());
+      this.onSendBoard?.(this.engine.board.toColorGrid(), this.engine.score);
       this.lastBoardSend = now;
     }
 
@@ -415,6 +422,10 @@ export class GameScreen {
       color: "#00f0f0",
       font: "bold 16px Orbitron, monospace",
     });
+    this.renderer.drawText(this.playerName, 10, 38, {
+      color: "#666",
+      font: "11px Orbitron, monospace",
+    });
 
     this.renderer.drawBoard(this.engine.board.grid, BOARD_OFFSET_X, BOARD_OFFSET_Y, this.engine.level, this.engine.baseHue);
 
@@ -436,19 +447,21 @@ export class GameScreen {
       ROWS * CELL_SIZE
     );
 
-    this.renderer.drawPreviewPiece(
-      this.engine.nextPieceType,
-      "NEXT",
-      10,
-      BOARD_OFFSET_Y + 10
-    );
+    const previews = this.engine.previewPieces;
+    this.renderer.drawText("NEXT", 10, BOARD_OFFSET_Y + 10, {
+      color: "#4a4a6a",
+      font: "10px Orbitron, monospace",
+    });
+    previews.forEach((type, i) => {
+      this.renderer.drawPreviewPiece(type, "", 10, BOARD_OFFSET_Y + 20 + i * 50);
+    });
 
     if (this.engine.heldPiece) {
       this.renderer.drawPreviewPiece(
         this.engine.heldPiece,
         "HOLD",
         10,
-        BOARD_OFFSET_Y + 100
+        BOARD_OFFSET_Y + 175
       );
     }
 
@@ -456,7 +469,7 @@ export class GameScreen {
       this.engine.score,
       this.engine.combo,
       10,
-      BOARD_OFFSET_Y + 200
+      BOARD_OFFSET_Y + 270
     );
 
     this.renderer.drawText(this.opponentName.toUpperCase(), OPP_OFFSET_X, OPP_OFFSET_Y - 10, {
@@ -465,6 +478,12 @@ export class GameScreen {
     });
     if (this.opponentGrid.length > 0) {
       this.renderer.drawOpponentBoard(this.opponentGrid, OPP_OFFSET_X, OPP_OFFSET_Y);
+      if (this.opponentScore > 0) {
+        this.renderer.drawText(this.opponentScore.toLocaleString(), OPP_OFFSET_X, OPP_OFFSET_Y + ROWS * MINI_CELL_SIZE + 20, {
+          color: "#666",
+          font: "12px Orbitron, monospace",
+        });
+      }
     }
 
     // Update and draw particles
@@ -500,14 +519,18 @@ export class GameScreen {
         this.sound.softDrop();
         this.startDAS("ArrowDown", () => { this.engine.softDrop(); this.sound.softDrop(); });
         break;
-      case "ArrowUp":
-        this.engine.rotateCW();
+      case "ArrowUp": {
+        const ok = this.engine.rotateCW();
         this.sound.rotate();
+        if (!ok) this.shakeTimer = 50;
         break;
-      case "KeyZ":
-        this.engine.rotateCCW();
+      }
+      case "KeyZ": {
+        const ok = this.engine.rotateCCW();
         this.sound.rotate();
+        if (!ok) this.shakeTimer = 50;
         break;
+      }
       case "KeyC":
         this.engine.holdPiece();
         this.sound.move();

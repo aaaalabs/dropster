@@ -26,6 +26,7 @@ let gameOverScreen: GameOverScreen | null = null;
 let peer: PeerConnection | null = null;
 let disconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let currentPlayer = "default";
+let currentDifficulty = "normal";
 let opponentName = "";
 
 function showLobby(): void {
@@ -104,6 +105,9 @@ function handleMessage(msg: Message): void {
       break;
     case "board":
       gameScreen?.updateOpponentBoard(msg.grid);
+      if (typeof msg.score === "number") {
+        gameScreen?.updateOpponentScore(msg.score);
+      }
       break;
     case "gameOver":
       showGameOver(true);
@@ -133,9 +137,10 @@ function handleDisconnect(): void {
 }
 
 function startGame(): void {
-  const difficulty = lobby?.selectedDifficulty ?? "normal";
+  const difficulty = lobby?.selectedDifficulty ?? currentDifficulty;
   const player = lobby?.selectedPlayer ?? currentPlayer;
   currentPlayer = player;
+  currentDifficulty = difficulty;
   lobbyMusic.stop();
   lobbyMusicStarted = false;
   lobby?.destroy();
@@ -145,7 +150,7 @@ function startGame(): void {
   leaderboard.startPlaying(player);
 
   gameScreen.onSendGarbage = (lines) => peer?.send({ type: "garbage", lines });
-  gameScreen.onSendBoard = (grid) => peer?.send({ type: "board", grid });
+  gameScreen.onSendBoard = (grid, score) => peer?.send({ type: "board", grid, score });
   gameScreen.onGameOver = () => {
     leaderboard.stopPlaying(player);
     peer?.send({ type: "gameOver" });
@@ -182,7 +187,11 @@ function showGameOver(won: boolean): void {
     app,
     won,
     score,
-    () => {},
+    () => {
+      gameOverScreen?.destroy();
+      gameOverScreen = null;
+      startGame();
+    },
     () => {
       gameOverScreen?.destroy();
       gameOverScreen = null;
@@ -192,7 +201,8 @@ function showGameOver(won: boolean): void {
       showLobby();
     },
     isNewHighScore,
-    highScore
+    highScore,
+    opponentName
   );
 }
 
@@ -210,5 +220,14 @@ function cleanup(): void {
     disconnectTimer = null;
   }
 }
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    lobbyMusic.muted = true;
+  } else {
+    const shouldMute = localStorage.getItem("dropster-muted") === "true";
+    lobbyMusic.muted = shouldMute;
+  }
+});
 
 showLobby();

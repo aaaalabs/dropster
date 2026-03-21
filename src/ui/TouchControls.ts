@@ -176,28 +176,36 @@ export class TouchControls {
     Object.assign(btn.style, {
       width: `${BTN_SIZE}px`,
       height: `${BTN_SIZE}px`,
-      background: "rgba(0,0,0,0.55)",
-      color: "#fff",
-      border: "2px solid rgba(255,255,255,0.25)",
+      background: "rgba(10, 10, 26, 0.75)",
+      color: "#00f0f0",
+      border: "1px solid rgba(0, 240, 240, 0.25)",
       borderRadius: "12px",
       fontSize: "22px",
       cursor: "pointer",
-      opacity: "0.8",
+      opacity: "0.7",
       touchAction: "none",
       userSelect: "none",
+      fontFamily: "Orbitron, monospace",
+      backdropFilter: "blur(4px)",
+      transition: "all 0.1s",
+      boxShadow: "0 0 8px rgba(0, 240, 240, 0.1)",
     });
 
     btn.addEventListener("touchstart", (e) => {
       e.stopPropagation();
       e.preventDefault();
       btn.style.opacity = "1";
+      btn.style.boxShadow = "0 0 15px rgba(0, 240, 240, 0.3)";
+      btn.style.borderColor = "rgba(0, 240, 240, 0.5)";
       action();
     }, { passive: false });
 
     btn.addEventListener("touchend", (e) => {
       e.stopPropagation();
       e.preventDefault();
-      btn.style.opacity = "0.8";
+      btn.style.opacity = "0.7";
+      btn.style.boxShadow = "0 0 8px rgba(0, 240, 240, 0.1)";
+      btn.style.borderColor = "rgba(0, 240, 240, 0.25)";
     }, { passive: false });
 
     return btn;

@@ -46,6 +46,7 @@ export class GameEngine {
   onSpecialEvent: ((event: string) => void) | null = null;
 
   private bag = new BagRandomizer();
+  private previewQueue: PieceType[] = [];
   private holdUsed = false;
   private wasInDanger = false;
   private pieceSpawnTime = 0;
@@ -58,6 +59,9 @@ export class GameEngine {
     this.diff = DIFFICULTIES[difficulty] ?? DIFFICULTIES.normal;
     this.playerName = player;
     this.highScore = parseInt(this.localStorageGet(`dropster-highscore-${player}`) ?? "0", 10);
+    for (let i = 0; i < 3; i++) {
+      this.previewQueue.push(this.bag.next());
+    }
     this.currentPiece = this.spawnPiece();
   }
 
@@ -90,7 +94,11 @@ export class GameEngine {
   }
 
   get nextPieceType(): PieceType {
-    return this.bag.peek();
+    return this.previewQueue[0];
+  }
+
+  get previewPieces(): PieceType[] {
+    return [...this.previewQueue];
   }
 
   moveLeft(): boolean {
@@ -302,7 +310,8 @@ export class GameEngine {
 
   private spawnPiece(): Piece {
     this.pieceSpawnTime = Date.now();
-    const type = this.bag.next();
+    const type = this.previewQueue.shift()!;
+    this.previewQueue.push(this.bag.next());
     return new Piece(type, this.getSpawnCol(type));
   }
 
