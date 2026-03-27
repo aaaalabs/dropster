@@ -104,8 +104,10 @@ function handleMessage(msg: Message): void {
   switch (msg.type) {
     case "ready":
       if (msg.player) opponentName = msg.player;
-      peer?.send({ type: "ready", player: currentPlayer });
-      if (!gameScreen) startGame();
+      if (!gameScreen) {
+        peer?.send({ type: "ready", player: currentPlayer });
+        startGame();
+      }
       break;
     case "garbage":
       gameScreen?.receiveGarbage(msg.lines);

@@ -95,7 +95,11 @@ export class PeerConnection {
       this.peer.on("open", (id) => {
         this.peer!.on("connection", (conn) => {
           this.conn = conn;
-          this.setupConnection();
+          if (conn.open) {
+            this.setupConnection();
+          } else {
+            conn.on("open", () => this.setupConnection());
+          }
         });
         resolve(id);
       });
