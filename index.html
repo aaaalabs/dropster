@@ -399,6 +399,23 @@
       color: #fff;
       border-color: rgba(255,255,255,0.15);
     }
+
+    /* Tablet overrides */
+    @media (min-width: 600px) {
+      .lobby-actions {
+        max-width: min(400px, 85vw);
+        gap: 14px;
+      }
+
+      .lobby-btn {
+        padding: 16px 24px;
+        font-size: 14px;
+      }
+
+      .controls-hint {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>

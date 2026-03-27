@@ -15,7 +15,8 @@ const TAP_MAX_MS = 200;
 const TAP_MAX_MOVE_PX = 10;
 const DOUBLE_TAP_MAX_MS = 300;
 const LONG_PRESS_MS = 300;
-const BTN_SIZE = 56;
+const BTN_SIZE = window.innerWidth >= 600 ? 68 : 56;
+const BTN_GAP = window.innerWidth >= 600 ? 20 : 8;
 
 export class TouchControls {
   private callbacks: TouchCallbacks;
@@ -134,7 +135,7 @@ export class TouchControls {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      padding: "8px 16px",
+      padding: BTN_GAP > 8 ? "12px 24px" : "8px 16px",
       zIndex: "999",
       pointerEvents: "none",
     });
@@ -161,7 +162,7 @@ export class TouchControls {
     const group = document.createElement("div");
     Object.assign(group.style, {
       display: "flex",
-      gap: "8px",
+      gap: `${BTN_GAP}px`,
       pointerEvents: "auto",
     });
     for (const { label, action } of btns) {

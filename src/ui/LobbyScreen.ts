@@ -1,5 +1,11 @@
 import { LeaderboardClient } from "../network/LeaderboardClient";
 
+const IS_TABLET = window.innerWidth >= 600;
+const SELECTOR_FONT = IS_TABLET ? "12px" : "9px";
+const SELECTOR_PAD = IS_TABLET ? "14px 8px" : "10px 4px";
+const DIFF_PAD = IS_TABLET ? "12px 0" : "8px 0";
+const DIFF_SUB_FONT = IS_TABLET ? "9px" : "7px";
+
 export interface LobbyCallbacks {
   onSolo: () => void;
   onChallenge: () => void;
@@ -32,18 +38,18 @@ export class LobbyScreen {
         <h1 class="lobby-title">DROPSTER</h1>
         <p class="lobby-subtitle">Block Battle Arena</p>
         <div class="lobby-actions">
-          <div id="player-selector" style="display:flex; gap:6px; justify-content:center;">
-            <button data-player="Leander" class="lobby-btn btn-ghost" style="flex:1; padding:10px 4px; font-size:9px; letter-spacing:0.05em;">Leander</button>
-            <button data-player="Finn" class="lobby-btn btn-ghost" style="flex:1; padding:10px 4px; font-size:9px; letter-spacing:0.05em;">Finn</button>
-            <button data-player="Mama" class="lobby-btn btn-ghost" style="flex:1; padding:10px 4px; font-size:9px; letter-spacing:0.05em;">Mama</button>
-            <button data-player="Papa" class="lobby-btn btn-ghost" style="flex:1; padding:10px 4px; font-size:9px; letter-spacing:0.05em;">Papa</button>
+          <div id="player-selector" style="display:flex; gap:${IS_TABLET ? '10px' : '6px'}; justify-content:center;">
+            <button data-player="Leander" class="lobby-btn btn-ghost" style="flex:1; padding:${SELECTOR_PAD}; font-size:${SELECTOR_FONT}; letter-spacing:0.05em;">Leander</button>
+            <button data-player="Finn" class="lobby-btn btn-ghost" style="flex:1; padding:${SELECTOR_PAD}; font-size:${SELECTOR_FONT}; letter-spacing:0.05em;">Finn</button>
+            <button data-player="Mama" class="lobby-btn btn-ghost" style="flex:1; padding:${SELECTOR_PAD}; font-size:${SELECTOR_FONT}; letter-spacing:0.05em;">Mama</button>
+            <button data-player="Papa" class="lobby-btn btn-ghost" style="flex:1; padding:${SELECTOR_PAD}; font-size:${SELECTOR_FONT}; letter-spacing:0.05em;">Papa</button>
           </div>
           <div class="divider"></div>
-          <div id="difficulty-selector" style="display:flex; gap:6px; justify-content:center;">
-            <button data-diff="chill" class="lobby-btn btn-ghost" style="flex:1; padding:8px 0; font-size:9px;"><div>CHILL</div><div style="font-size:7px; opacity:0.6; margin-top:2px;">×0.5</div></button>
-            <button data-diff="normal" class="lobby-btn btn-ghost" style="flex:1; padding:8px 0; font-size:9px;"><div>NORMAL</div><div style="font-size:7px; opacity:0.6; margin-top:2px;">×1</div></button>
-            <button data-diff="hard" class="lobby-btn btn-ghost" style="flex:1; padding:8px 0; font-size:9px;"><div>HARD</div><div style="font-size:7px; opacity:0.6; margin-top:2px;">×1.5</div></button>
-            <button data-diff="insane" class="lobby-btn btn-ghost" style="flex:1; padding:8px 0; font-size:9px;"><div>INSANE</div><div style="font-size:7px; opacity:0.6; margin-top:2px;">×2.5 💀</div></button>
+          <div id="difficulty-selector" style="display:flex; gap:${IS_TABLET ? '10px' : '6px'}; justify-content:center;">
+            <button data-diff="chill" class="lobby-btn btn-ghost" style="flex:1; padding:${DIFF_PAD}; font-size:${SELECTOR_FONT};"><div>CHILL</div><div style="font-size:${DIFF_SUB_FONT}; opacity:0.6; margin-top:2px;">×0.5</div></button>
+            <button data-diff="normal" class="lobby-btn btn-ghost" style="flex:1; padding:${DIFF_PAD}; font-size:${SELECTOR_FONT};"><div>NORMAL</div><div style="font-size:${DIFF_SUB_FONT}; opacity:0.6; margin-top:2px;">×1</div></button>
+            <button data-diff="hard" class="lobby-btn btn-ghost" style="flex:1; padding:${DIFF_PAD}; font-size:${SELECTOR_FONT};"><div>HARD</div><div style="font-size:${DIFF_SUB_FONT}; opacity:0.6; margin-top:2px;">×1.5</div></button>
+            <button data-diff="insane" class="lobby-btn btn-ghost" style="flex:1; padding:${DIFF_PAD}; font-size:${SELECTOR_FONT};"><div>INSANE</div><div style="font-size:${DIFF_SUB_FONT}; opacity:0.6; margin-top:2px;">×2.5 💀</div></button>
           </div>
           <div class="divider"></div>
           <button id="btn-challenge" class="lobby-btn btn-primary">⚔️ Challenge</button>
