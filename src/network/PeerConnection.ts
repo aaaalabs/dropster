@@ -172,7 +172,9 @@ export class PeerConnection {
 
   private setupConnection(): void {
     if (!this.conn) return;
-    this.onStatus?.("Connected!");
+
+    // Detect connection type (direct vs relay)
+    this.detectConnectionType();
 
     this.conn.on("data", (data) => {
       const msg = decodeMessage(data as string);
@@ -181,6 +183,63 @@ export class PeerConnection {
 
     this.conn.on("close", () => {
       this.onDisconnect?.();
+    });
+  }
+
+  private detectConnectionType(): void {
+    // Access underlying RTCPeerConnection via PeerJS internals
+    const pc = (this.conn as any)?.peerConnection as RTCPeerConnection | undefined;
+    if (!pc) {
+      this.onStatus?.("Connected!");
+      return;
+    }
+
+    // Show ICE state changes during setup
+    pc.oniceconnectionstatechange = () => {
+      const state = pc.iceConnectionState;
+      if (state === "checking") this.onStatus?.("Establishing route...");
+      if (state === "connected" || state === "completed") {
+        this.reportConnectionDetails(pc);
+      }
+      if (state === "failed") this.onStatus?.("Connection failed.");
+    };
+
+    // If already connected, report immediately
+    if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
+      this.reportConnectionDetails(pc);
+    } else {
+      this.onStatus?.("Connected! Optimizing...");
+    }
+  }
+
+  private reportConnectionDetails(pc: RTCPeerConnection): void {
+    pc.getStats().then(stats => {
+      let relayed = false;
+      let protocol = "";
+
+      stats.forEach(report => {
+        if (report.type === "candidate-pair" && report.state === "succeeded") {
+          const localId = report.localCandidateId;
+          const remoteId = report.remoteCandidateId;
+
+          stats.forEach(c => {
+            if (c.id === localId) {
+              protocol = c.protocol ?? "";
+              if (c.candidateType === "relay") relayed = true;
+            }
+            if (c.id === remoteId) {
+              if (c.candidateType === "relay") relayed = true;
+            }
+          });
+        }
+      });
+
+      const mode = relayed ? "relay" : "direct";
+      const proto = protocol ? ` ${protocol.toUpperCase()}` : "";
+      const detail = `Connected! (${mode}${proto})`;
+      this.onStatus?.(detail);
+    }).catch(() => {
+      this.onStatus?.("Connected!");
     });
   }
 
