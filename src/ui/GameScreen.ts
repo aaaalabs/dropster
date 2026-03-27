@@ -12,10 +12,9 @@ import {
   ROWS,
 } from "../game/constants";
 
-const IS_TABLET = window.innerWidth >= 600;
-const CELL_SIZE = IS_TABLET ? 34 : 28;
-const MINI_CELL_SIZE = IS_TABLET ? 15 : 12;
-const SIDE_PANEL_WIDTH = IS_TABLET ? 120 : 100;
+const CELL_SIZE = 28;
+const MINI_CELL_SIZE = 12;
+const SIDE_PANEL_WIDTH = 100;
 const BOARD_OFFSET_X = SIDE_PANEL_WIDTH + 20;
 const BOARD_OFFSET_Y = 40;
 const OPP_OFFSET_X = BOARD_OFFSET_X + COLS * CELL_SIZE + 30;
