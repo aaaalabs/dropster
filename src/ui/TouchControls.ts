@@ -142,14 +142,12 @@ export class TouchControls {
 
     const leftGroup = this.makeGroup([
       { label: "←", action: this.callbacks.onMoveLeft },
-      { label: "↓", action: this.callbacks.onSoftDrop },
+      { label: "↓", action: this.callbacks.onRotateCW },
       { label: "→", action: this.callbacks.onMoveRight },
     ]);
 
     const rightGroup = this.makeGroup([
-      { label: "↻", action: this.callbacks.onRotateCW },
       { label: "⤓", action: this.callbacks.onHardDrop },
-      { label: "⊟", action: this.callbacks.onHoldPiece },
     ]);
 
     overlay.appendChild(leftGroup);
