@@ -142,7 +142,7 @@ export class TouchControls {
 
     const leftGroup = this.makeGroup([
       { label: "←", action: this.callbacks.onMoveLeft },
-      { label: "↓", action: this.callbacks.onRotateCW },
+      { label: "↓", action: this.callbacks.onRotateCW, holdAction: this.callbacks.onSoftDrop },
       { label: "→", action: this.callbacks.onMoveRight },
     ]);
 
@@ -156,20 +156,20 @@ export class TouchControls {
     return overlay;
   }
 
-  private makeGroup(btns: { label: string; action: () => void }[]): HTMLElement {
+  private makeGroup(btns: { label: string; action: () => void; holdAction?: () => void }[]): HTMLElement {
     const group = document.createElement("div");
     Object.assign(group.style, {
       display: "flex",
       gap: `${BTN_GAP}px`,
       pointerEvents: "auto",
     });
-    for (const { label, action } of btns) {
-      group.appendChild(this.makeBtn(label, action));
+    for (const { label, action, holdAction } of btns) {
+      group.appendChild(this.makeBtn(label, action, holdAction));
     }
     return group;
   }
 
-  private makeBtn(label: string, action: () => void): HTMLElement {
+  private makeBtn(label: string, action: () => void, holdAction?: () => void): HTMLElement {
     const btn = document.createElement("button");
     btn.textContent = label;
     Object.assign(btn.style, {
@@ -190,12 +190,27 @@ export class TouchControls {
       boxShadow: "0 0 8px rgba(0, 240, 240, 0.1)",
     });
 
+    let holdTimer: ReturnType<typeof setTimeout> | null = null;
+    let holdInterval: ReturnType<typeof setInterval> | null = null;
+    const clearHold = () => {
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      if (holdInterval) { clearInterval(holdInterval); holdInterval = null; }
+    };
+
     btn.addEventListener("touchstart", (e) => {
       e.stopPropagation();
       e.preventDefault();
       btn.style.opacity = "1";
       btn.style.boxShadow = "0 0 15px rgba(0, 240, 240, 0.3)";
       btn.style.borderColor = "rgba(0, 240, 240, 0.5)";
+
+      if (holdAction) {
+        holdTimer = setTimeout(() => {
+          holdAction();
+          holdInterval = setInterval(holdAction, 80);
+        }, LONG_PRESS_MS);
+      }
+
       action();
     }, { passive: false });
 
@@ -205,7 +220,10 @@ export class TouchControls {
       btn.style.opacity = "0.7";
       btn.style.boxShadow = "0 0 8px rgba(0, 240, 240, 0.1)";
       btn.style.borderColor = "rgba(0, 240, 240, 0.25)";
+      clearHold();
     }, { passive: false });
+
+    btn.addEventListener("touchcancel", () => clearHold(), { passive: true });
 
     return btn;
   }
