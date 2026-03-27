@@ -95,8 +95,13 @@ async function handleAcceptChallenge(opponent: string): Promise<void> {
     lobby?.setStatus("Connected!");
     peer.send({ type: "ready", player: currentPlayer });
     startGame();
-  } catch {
-    lobby?.setStatus("Could not connect. Try again.");
+  } catch (err) {
+    const msg = err instanceof Error && err.message.includes("timed out")
+      ? "Connection timed out. Try again."
+      : "Could not connect. Try again.";
+    lobby?.setStatus(msg);
+    peer?.destroy();
+    peer = null;
   }
 }
 

@@ -4,12 +4,36 @@ import { Message, encodeMessage, decodeMessage } from "./Protocol";
 export type ConnectionCallback = (msg: Message) => void;
 export type StatusCallback = (status: string) => void;
 
+const CONNECTION_TIMEOUT = 12000;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const METERED_API_URL = (import.meta as any).env?.VITE_METERED_API_URL as string | undefined;
+
+async function fetchIceServers(): Promise<RTCIceServer[]> {
+  const fallback: RTCIceServer[] = [
+    { urls: "stun:stun.l.google.com:19302" },
+  ];
+  if (!METERED_API_URL) return fallback;
+  try {
+    const res = await fetch(METERED_API_URL);
+    const servers = await res.json();
+    return servers;
+  } catch {
+    return fallback;
+  }
+}
+
+function createPeerWithIce(iceServers: RTCIceServer[], id?: string): Peer {
+  const opts = { config: { iceServers } };
+  return id ? new Peer(id, opts) : new Peer(opts);
+}
+
 export class PeerConnection {
   private peer: Peer | null = null;
   private conn: DataConnection | null = null;
   private onMessage: ConnectionCallback | null = null;
   private onStatus: StatusCallback | null = null;
   private onDisconnect: (() => void) | null = null;
+  private iceServers: RTCIceServer[] = [];
 
   setHandlers(handlers: {
     onMessage: ConnectionCallback;
@@ -19,6 +43,12 @@ export class PeerConnection {
     this.onMessage = handlers.onMessage;
     this.onStatus = handlers.onStatus;
     this.onDisconnect = handlers.onDisconnect;
+  }
+
+  private async ensureIce(): Promise<void> {
+    if (this.iceServers.length === 0) {
+      this.iceServers = await fetchIceServers();
+    }
   }
 
   createRoom(): Promise<string> {
@@ -61,26 +91,44 @@ export class PeerConnection {
     });
   }
 
-  connectToPeer(peerId: string): Promise<void> {
+  async connectToPeer(peerId: string): Promise<void> {
+    await this.ensureIce();
+    this.onStatus?.("Connecting...");
+
     return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error("Connection timed out"));
+      }, CONNECTION_TIMEOUT);
+
       if (!this.peer) {
-        this.peer = new Peer();
+        this.peer = createPeerWithIce(this.iceServers);
         this.peer.on("open", () => {
           this.conn = this.peer!.connect(peerId);
           this.conn.on("open", () => {
+            clearTimeout(timeout);
             this.setupConnection();
             resolve();
           });
-          this.conn.on("error", reject);
+          this.conn.on("error", (err) => {
+            clearTimeout(timeout);
+            reject(err);
+          });
         });
-        this.peer.on("error", reject);
+        this.peer.on("error", (err) => {
+          clearTimeout(timeout);
+          reject(err);
+        });
       } else {
         this.conn = this.peer.connect(peerId);
         this.conn.on("open", () => {
+          clearTimeout(timeout);
           this.setupConnection();
           resolve();
         });
-        this.conn.on("error", reject);
+        this.conn.on("error", (err) => {
+          clearTimeout(timeout);
+          reject(err);
+        });
       }
     });
   }
@@ -89,9 +137,11 @@ export class PeerConnection {
     return this.peer?.id ?? null;
   }
 
-  initPeer(): Promise<string> {
+  async initPeer(): Promise<string> {
+    await this.ensureIce();
+
     return new Promise((resolve, reject) => {
-      this.peer = new Peer();
+      this.peer = createPeerWithIce(this.iceServers);
       this.peer.on("open", (id) => {
         this.peer!.on("connection", (conn) => {
           this.conn = conn;
