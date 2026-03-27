@@ -38,11 +38,15 @@ export class LobbyScreen {
         <h1 class="lobby-title">DROPSTER</h1>
         <p class="lobby-subtitle">Block Battle Arena</p>
         <div class="lobby-actions">
-          <div id="player-selector" style="display:flex; gap:${IS_TABLET ? '10px' : '6px'}; justify-content:center;">
-            <button data-player="Leander" class="lobby-btn btn-ghost" style="flex:1; padding:${SELECTOR_PAD}; font-size:${SELECTOR_FONT}; letter-spacing:0.05em;">Leander</button>
-            <button data-player="Finn" class="lobby-btn btn-ghost" style="flex:1; padding:${SELECTOR_PAD}; font-size:${SELECTOR_FONT}; letter-spacing:0.05em;">Finn</button>
-            <button data-player="Mama" class="lobby-btn btn-ghost" style="flex:1; padding:${SELECTOR_PAD}; font-size:${SELECTOR_FONT}; letter-spacing:0.05em;">Mama</button>
-            <button data-player="Papa" class="lobby-btn btn-ghost" style="flex:1; padding:${SELECTOR_PAD}; font-size:${SELECTOR_FONT}; letter-spacing:0.05em;">Papa</button>
+          <div id="player-selector" style="display:flex; flex-wrap:wrap; gap:${IS_TABLET ? '10px' : '6px'}; justify-content:center;">
+            <button data-player="Leander" class="lobby-btn btn-ghost" style="flex:1; min-width:22%; padding:${SELECTOR_PAD}; font-size:${SELECTOR_FONT}; letter-spacing:0.05em;">Leander</button>
+            <button data-player="Finn" class="lobby-btn btn-ghost" style="flex:1; min-width:22%; padding:${SELECTOR_PAD}; font-size:${SELECTOR_FONT}; letter-spacing:0.05em;">Finn</button>
+            <button data-player="Mama" class="lobby-btn btn-ghost" style="flex:1; min-width:22%; padding:${SELECTOR_PAD}; font-size:${SELECTOR_FONT}; letter-spacing:0.05em;">Mama</button>
+            <button data-player="Papa" class="lobby-btn btn-ghost" style="flex:1; min-width:22%; padding:${SELECTOR_PAD}; font-size:${SELECTOR_FONT}; letter-spacing:0.05em;">Papa</button>
+            <button data-player="Rivka" class="lobby-btn btn-ghost" style="flex:1; min-width:22%; padding:${SELECTOR_PAD}; font-size:${SELECTOR_FONT}; letter-spacing:0.05em;">Rivka</button>
+            <button data-player="Erin" class="lobby-btn btn-ghost" style="flex:1; min-width:22%; padding:${SELECTOR_PAD}; font-size:${SELECTOR_FONT}; letter-spacing:0.05em;">Erin</button>
+            <button data-player="Nele" class="lobby-btn btn-ghost" style="flex:1; min-width:22%; padding:${SELECTOR_PAD}; font-size:${SELECTOR_FONT}; letter-spacing:0.05em;">Nele</button>
+            <button data-player="Sören" class="lobby-btn btn-ghost" style="flex:1; min-width:22%; padding:${SELECTOR_PAD}; font-size:${SELECTOR_FONT}; letter-spacing:0.05em;">Sören</button>
           </div>
           <div class="divider"></div>
           <div id="difficulty-selector" style="display:flex; gap:${IS_TABLET ? '10px' : '6px'}; justify-content:center;">
@@ -132,7 +136,7 @@ export class LobbyScreen {
     const el = this.container.querySelector("#highscore-display");
     if (!el) return;
 
-    const players = ["Leander", "Finn", "Mama", "Papa"];
+    const players = ["Leander", "Finn", "Mama", "Papa", "Rivka", "Erin", "Nele", "Sören"];
     const localScores = players.map(p => {
       const s = parseInt(localStorage.getItem(`dropster-highscore-${p}`) ?? "0", 10);
       return { name: p, score: s };
