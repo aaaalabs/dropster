@@ -6,6 +6,18 @@ const SELECTOR_PAD = IS_TABLET ? "14px 8px" : "10px 4px";
 const DIFF_PAD = IS_TABLET ? "12px 0" : "8px 0";
 const DIFF_SUB_FONT = IS_TABLET ? "9px" : "7px";
 
+function capPapaScore(scores: { name: string; score: number }[]): { name: string; score: number }[] {
+  const kidsMax = Math.max(
+    ...scores.filter(s => s.name === "Leander" || s.name === "Finn").map(s => s.score),
+    0
+  );
+  if (kidsMax === 0) return scores;
+  const cap = Math.round(kidsMax * 1.1);
+  return scores
+    .map(s => s.name === "Papa" && s.score > cap ? { ...s, score: cap } : s)
+    .sort((a, b) => b.score - a.score);
+}
+
 export interface LobbyCallbacks {
   onSolo: () => void;
   onChallenge: () => void;
@@ -142,7 +154,7 @@ export class LobbyScreen {
       return { name: p, score: s };
     }).filter(s => s.score > 0).sort((a, b) => b.score - a.score);
 
-    this.renderScores(el as HTMLElement, localScores);
+    this.renderScores(el as HTMLElement, capPapaScore(localScores));
 
     this.lb.fetch().then(data => {
       const merged = new Map<string, number>();
@@ -157,10 +169,12 @@ export class LobbyScreen {
         const localScore = parseInt(localStorage.getItem(`dropster-highscore-${name}`) ?? "0", 10);
         if (score > localScore) localStorage.setItem(`dropster-highscore-${name}`, String(score));
       }
-      const scores = [...merged.entries()]
-        .map(([name, score]) => ({ name, score }))
-        .filter(s => s.score > 0)
-        .sort((a, b) => b.score - a.score);
+      const scores = capPapaScore(
+        [...merged.entries()]
+          .map(([name, score]) => ({ name, score }))
+          .filter(s => s.score > 0)
+          .sort((a, b) => b.score - a.score)
+      );
       this.renderScores(el as HTMLElement, scores, data.activity);
     }).catch(() => {});
   }
