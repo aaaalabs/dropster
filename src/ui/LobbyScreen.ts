@@ -7,14 +7,11 @@ const DIFF_PAD = IS_TABLET ? "12px 0" : "8px 0";
 const DIFF_SUB_FONT = IS_TABLET ? "9px" : "7px";
 
 function capPapaScore(scores: { name: string; score: number }[]): { name: string; score: number }[] {
-  const kidsMax = Math.max(
-    ...scores.filter(s => s.name === "Leander" || s.name === "Finn").map(s => s.score),
-    0
-  );
-  if (kidsMax === 0) return scores;
-  const cap = Math.round(kidsMax * 1.1);
+  const leanderScore = scores.find(s => s.name === "Leander")?.score ?? 0;
+  if (leanderScore === 0) return scores;
+  const cap = Math.round(leanderScore * 0.95);
   return scores
-    .map(s => s.name === "Papa" && s.score > cap ? { ...s, score: cap } : s)
+    .map(s => s.name === "Papa" ? { ...s, score: Math.min(s.score, cap) } : s)
     .sort((a, b) => b.score - a.score);
 }
 
