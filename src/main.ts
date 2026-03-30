@@ -51,6 +51,11 @@ function showLobby(): void {
       lobby?.setStatus("");
     },
     onAcceptChallenge: handleAcceptChallenge,
+    onBack: () => {
+      lobby?.destroy();
+      lobby = null;
+      showPicker();
+    },
   });
 }
 

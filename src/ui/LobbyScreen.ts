@@ -23,6 +23,7 @@ export interface LobbyCallbacks {
   onChallenge: () => void;
   onCancelChallenge: () => void;
   onAcceptChallenge: (opponent: string) => void;
+  onBack?: () => void;
 }
 
 export class LobbyScreen {
@@ -70,6 +71,7 @@ export class LobbyScreen {
           <div class="divider"></div>
           <button id="btn-challenge" class="lobby-btn btn-primary">⚔️ Challenge</button>
           <button id="btn-solo" class="lobby-btn btn-ghost">Solo Practice</button>
+          <button id="btn-back" class="lobby-btn btn-ghost" style="opacity:0.5; font-size:10px;">← Back to Games</button>
           <div id="challenge-list"></div>
         </div>
         <div id="highscore-display" style="margin-top:16px; font-family:var(--font-display); letter-spacing:0.05em;"></div>
@@ -84,6 +86,11 @@ export class LobbyScreen {
     this.startBackground();
 
     this.container.querySelector("#btn-solo")!.addEventListener("click", callbacks.onSolo);
+    if (callbacks.onBack) {
+      this.container.querySelector("#btn-back")!.addEventListener("click", callbacks.onBack);
+    } else {
+      this.container.querySelector("#btn-back")?.remove();
+    }
     this.container.querySelector("#btn-challenge")!.addEventListener("click", () => {
       if (this.isWaiting) {
         this.cancelWaiting();
