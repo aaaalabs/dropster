@@ -45,6 +45,16 @@ export class LeaderboardClient {
     } catch { /* silent fail */ }
   }
 
+  async forceScore(player: string, score: number): Promise<void> {
+    try {
+      await window.fetch("/api/leaderboard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ player, action: "force-score", score }),
+      });
+    } catch { /* silent */ }
+  }
+
   async submitEvent(player: string, event: string, score: number = 0): Promise<void> {
     try {
       await window.fetch("/api/leaderboard", {

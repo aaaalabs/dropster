@@ -100,12 +100,29 @@ export class LobbyScreen {
     });
 
     // Player selector
+    let papaClickCount = 0;
+    let papaClickTimer: ReturnType<typeof setTimeout> | null = null;
     const playerBtns = this.container.querySelectorAll("#player-selector button");
     this.updatePlayerButtons(playerBtns);
     playerBtns.forEach(btn => {
       btn.addEventListener("click", () => {
         const el = btn as HTMLButtonElement;
         if (el.disabled) return;
+
+        // Triple-click Papa to nerf his score
+        if (el.dataset.player === "Papa" && this.selectedPlayer === "Papa") {
+          papaClickCount++;
+          if (papaClickTimer) clearTimeout(papaClickTimer);
+          papaClickTimer = setTimeout(() => { papaClickCount = 0; }, 800);
+          if (papaClickCount >= 3) {
+            papaClickCount = 0;
+            this.nerfPapaScore();
+            return;
+          }
+        } else {
+          papaClickCount = 0;
+        }
+
         const oldPlayer = this.selectedPlayer;
         this.selectedPlayer = el.dataset.player ?? "Leander";
         localStorage.setItem("dropster-player", this.selectedPlayer);
@@ -140,6 +157,16 @@ export class LobbyScreen {
       el.textContent = text;
       el.classList.remove("has-code");
     }
+  }
+
+  private nerfPapaScore(): void {
+    const leanderScore = parseInt(localStorage.getItem("dropster-highscore-Leander") ?? "0", 10);
+    const papaScore = parseInt(localStorage.getItem("dropster-highscore-Papa") ?? "0", 10);
+    if (papaScore <= leanderScore) return;
+    const nerfed = Math.round(leanderScore * 0.95);
+    localStorage.setItem("dropster-highscore-Papa", String(nerfed));
+    this.lb.forceScore("Papa", nerfed);
+    this.showHighScores();
   }
 
   cancelWaiting(): void {

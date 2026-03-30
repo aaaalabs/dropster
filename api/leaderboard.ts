@@ -114,6 +114,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.json({ ok: true });
     }
 
+    // Force-set score (overwrite, even lower)
+    if (action === "force-score" && typeof score === "number") {
+      await r.hset(SCORES_KEY, { [player]: score });
+      return res.json({ ok: true });
+    }
+
     if (score !== undefined) {
       const current = await r.hget(SCORES_KEY, player) as string | null;
       const currentScore = parseInt(current ?? "0", 10);
