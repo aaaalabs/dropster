@@ -196,13 +196,19 @@ export class GamePickerScreen {
 
   private spawnTetrisPiece(): void {
     const p = this.PIECES[Math.floor(Math.random() * this.PIECES.length)];
-    const offsetX = Math.floor((this.cols - 4) / 2);
+    const pieceW = Math.max(...p.blocks.map(b => b.x)) + 1;
+    const maxX = this.cols - pieceW;
+    const x = Math.floor(Math.random() * (maxX + 1));
     this.tetrisPiece = {
-      x: offsetX,
+      x,
       y: 0,
       blocks: p.blocks.map(b => ({ ...b })),
       color: p.color,
     };
+    // If spawn overlaps existing blocks, reset the board
+    if (!this.canPlace(x, 0, this.tetrisPiece.blocks)) {
+      this.tetrisGrid = Array.from({ length: this.rows }, () => Array(this.cols).fill(0));
+    }
   }
 
   private canPlace(px: number, py: number, blocks: { x: number; y: number }[]): boolean {
@@ -232,14 +238,6 @@ export class GamePickerScreen {
       this.tetrisGrid = this.tetrisGrid.filter(row => row.some(c => c === 0));
       while (this.tetrisGrid.length < this.rows) {
         this.tetrisGrid.unshift(Array(this.cols).fill(0));
-      }
-
-      // Check if board is too full → clear bottom half
-      const filled = this.tetrisGrid.filter(row => row.some(c => c !== 0)).length;
-      if (filled > this.rows * 0.7) {
-        for (let y = Math.floor(this.rows / 2); y < this.rows; y++) {
-          this.tetrisGrid[y] = Array(this.cols).fill(0);
-        }
       }
 
       this.spawnTetrisPiece();
