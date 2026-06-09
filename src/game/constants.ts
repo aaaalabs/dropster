@@ -96,7 +96,7 @@ export const LEVEL_INTERVAL_MS = 90000;
 export const DAS_DELAY = 170;
 export const ARR_DELAY = 50;
 
-export const GARBAGE_DELAY_MS = 500;
+export const GARBAGE_DELAY_MS = 1500;
 
 export const SCORING = {
   single: 100,

@@ -91,8 +91,8 @@ export class GameScreen {
     this.engine.onLineClear = (count, rows, snapshots) => {
       this.sound.lineClear(count);
 
-      // Hit stop — freeze game logic so the moment breathes
-      const freezeMs = count === 4 ? 1200 : 150 + count * 250;
+      // Hit stop — freeze game logic so the moment breathes (capped at 500ms to keep momentum)
+      const freezeMs = count === 4 ? 500 : 150 + count * 100;
       const now = performance.now();
       this.freezeUntil = now + freezeMs;
 
@@ -216,7 +216,7 @@ export class GameScreen {
         this.particles.burst(centerX, centerY, 40, {
           color: "#ffd700", speed: 5, life: 50, size: 4, gravity: 0.05,
         });
-        this.freezeUntil = performance.now() + 600;
+        this.freezeUntil = performance.now() + 500;
         this.sound.announce("Perfect clear!");
       }
       if (event === "new-highscore") {

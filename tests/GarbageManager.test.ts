@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { GarbageManager } from "../src/game/GarbageManager";
+import { GARBAGE_DELAY_MS } from "../src/game/constants";
 
 describe("GarbageManager", () => {
   it("queues incoming garbage", () => {
@@ -52,7 +53,7 @@ describe("GarbageManager", () => {
     const ready1 = gm.getReadyGarbage();
     expect(ready1).toBe(0);
 
-    vi.advanceTimersByTime(500);
+    vi.advanceTimersByTime(GARBAGE_DELAY_MS);
     const ready2 = gm.getReadyGarbage();
     expect(ready2).toBe(2);
     expect(gm.pendingLines).toBe(0);

@@ -11,8 +11,8 @@ interface TouchCallbacks {
 }
 
 const SWIPE_MIN_PX = 30;
-const TAP_MAX_MS = 200;
-const TAP_MAX_MOVE_PX = 10;
+const TAP_MAX_MS = 250;
+const TAP_MAX_MOVE_PX = 18;
 const DOUBLE_TAP_MAX_MS = 300;
 const LONG_PRESS_MS = 300;
 const BTN_SIZE = window.innerWidth >= 600 ? 68 : 56;
