@@ -45,7 +45,7 @@ export class LobbyScreen {
     this.container.id = "lobby";
     this.container.innerHTML = `
       <div class="lobby">
-        <h1 class="lobby-title">DROPSTER</h1>
+        <h1 id="lobby-title" class="lobby-title" style="cursor:pointer;">DROPSTER</h1>
         <p class="lobby-subtitle">Block Battle Arena</p>
         <div class="lobby-actions">
           <div id="player-selector" style="display:flex; flex-wrap:wrap; gap:${IS_TABLET ? '10px' : '6px'}; justify-content:center;">
@@ -82,6 +82,9 @@ export class LobbyScreen {
     this.bgCanvas = this.createBackground(parent);
     this.startBackground();
 
+    this.container.querySelector("#lobby-title")!.addEventListener("click", () => {
+      window.location.href = "https://hdc.ngo";
+    });
     this.container.querySelector("#btn-solo")!.addEventListener("click", callbacks.onSolo);
     if (callbacks.onBack) {
       this.container.querySelector("#btn-back")!.addEventListener("click", callbacks.onBack);

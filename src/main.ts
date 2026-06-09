@@ -2,7 +2,6 @@ import { PeerConnection } from "./network/PeerConnection";
 import { LeaderboardClient } from "./network/LeaderboardClient";
 import { Message } from "./network/Protocol";
 import { MusicEngine } from "./audio/MusicEngine";
-import { GamePickerScreen } from "./ui/GamePickerScreen";
 import { LobbyScreen } from "./ui/LobbyScreen";
 import { GameScreen } from "./ui/GameScreen";
 import { GameOverScreen } from "./ui/GameOverScreen";
@@ -21,7 +20,6 @@ function ensureLobbyMusic(): void {
   lobbyMusic.start();
 }
 
-let picker: GamePickerScreen | null = null;
 let lobby: LobbyScreen | null = null;
 let gameScreen: GameScreen | null = null;
 let gameOverScreen: GameOverScreen | null = null;
@@ -30,15 +28,6 @@ let disconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let currentPlayer = "default";
 let currentDifficulty = "normal";
 let opponentName = "";
-
-function showPicker(): void {
-  cleanup();
-  picker = new GamePickerScreen(app, () => {
-    picker?.destroy();
-    picker = null;
-    showLobby();
-  });
-}
 
 function showLobby(): void {
   cleanup();
@@ -52,9 +41,7 @@ function showLobby(): void {
     },
     onAcceptChallenge: handleAcceptChallenge,
     onBack: () => {
-      lobby?.destroy();
-      lobby = null;
-      showPicker();
+      window.location.href = "https://leodin.com/";
     },
   });
 }
@@ -237,8 +224,6 @@ function showGameOver(won: boolean): void {
 }
 
 function cleanup(): void {
-  picker?.destroy();
-  picker = null;
   lobby?.destroy();
   lobby = null;
   gameScreen?.destroy();
@@ -262,7 +247,7 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-showPicker();
+showLobby();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
