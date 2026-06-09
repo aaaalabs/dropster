@@ -8,6 +8,73 @@ const MINI_CELL_SIZE = 12;
 const GHOST_ALPHA = 0.3;
 const BG_COLOR = "#0f0f1a";
 const GARBAGE_COLOR = "#666666";
+const SPRITE_PAD = 6; // room for baked glow around the cell
+const WALL_WIDTH = 14;
+
+/** Multiply a #rrggbb color's channels by factor (clamped). */
+function shade(hex: string, factor: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = (v: number): number => Math.min(255, Math.round(v * factor));
+  const r = ch((n >> 16) & 0xff);
+  const g = ch((n >> 8) & 0xff);
+  const b = ch(n & 0xff);
+  return `rgb(${r},${g},${b})`;
+}
+
+/**
+ * Bake a beveled cell sprite once per (size, color) on an offscreen canvas.
+ * Light source top-left: bright top/left bevel, dark bottom/right bevel,
+ * subtle diagonal gradient in the center face. Glow is baked in too, so
+ * runtime drawing is a single drawImage per cell.
+ */
+function bakeCellSprite(size: number, color: string): HTMLCanvasElement {
+  const sprite = document.createElement("canvas");
+  sprite.width = sprite.height = size + SPRITE_PAD * 2;
+  const g = sprite.getContext("2d")!;
+  const x = SPRITE_PAD + 1;
+  const y = SPRITE_PAD + 1;
+  const s = size - 2;
+  const b = Math.max(2, Math.round(s * 0.18)); // bevel width
+
+  // Baked glow (replaces runtime shadowBlur)
+  g.shadowBlur = 6;
+  g.shadowColor = color;
+  g.fillStyle = color;
+  g.fillRect(x, y, s, s);
+  g.shadowBlur = 0;
+
+  // Center face: subtle diagonal gradient (lighter top-left)
+  const grad = g.createLinearGradient(x, y, x + s, y + s);
+  grad.addColorStop(0, shade(color, 1.18));
+  grad.addColorStop(0.5, color);
+  grad.addColorStop(1, shade(color, 0.8));
+  g.fillStyle = grad;
+  g.fillRect(x, y, s, s);
+
+  const trapezoid = (pts: number[][]): void => {
+    g.beginPath();
+    g.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]);
+    g.closePath();
+    g.fill();
+  };
+
+  // Light bevels: top + left
+  g.fillStyle = "rgba(255,255,255,0.4)";
+  trapezoid([[x, y], [x + s, y], [x + s - b, y + b], [x + b, y + b]]);
+  g.fillStyle = "rgba(255,255,255,0.25)";
+  trapezoid([[x, y], [x + b, y + b], [x + b, y + s - b], [x, y + s]]);
+
+  // Dark bevels: bottom + right
+  g.fillStyle = "rgba(0,0,0,0.4)";
+  trapezoid([[x, y + s], [x + b, y + s - b], [x + s - b, y + s - b], [x + s, y + s]]);
+  g.fillStyle = "rgba(0,0,0,0.3)";
+  trapezoid([[x + s, y], [x + s, y + s], [x + s - b, y + s - b], [x + s - b, y + b]]);
+
+  return sprite;
+}
+
+const cellSpriteCache = new Map<string, HTMLCanvasElement>();
 
 const COLOR_MAP: Record<number, string> = {
   0: "transparent",
@@ -59,6 +126,8 @@ export class Renderer {
       this.ctx.stroke();
     }
 
+    this.drawWellWalls(offsetX, offsetY);
+
     for (let y = 0; y < ROWS; y++) {
       for (let x = 0; x < COLS; x++) {
         if (grid[y][x] !== 0) {
@@ -73,6 +142,27 @@ export class Renderer {
     }
   }
 
+  /** Trough walls: narrow gradients along left/right/bottom, darker towards the edge — the board reads as a shaft seen from above. */
+  private drawWellWalls(offsetX: number, offsetY: number): void {
+    const left = this.ctx.createLinearGradient(offsetX, 0, offsetX + WALL_WIDTH, 0);
+    left.addColorStop(0, "rgba(0,0,0,0.5)");
+    left.addColorStop(1, "rgba(0,0,0,0)");
+    this.ctx.fillStyle = left;
+    this.ctx.fillRect(offsetX, offsetY, WALL_WIDTH, this.boardHeight);
+
+    const right = this.ctx.createLinearGradient(offsetX + this.boardWidth - WALL_WIDTH, 0, offsetX + this.boardWidth, 0);
+    right.addColorStop(0, "rgba(0,0,0,0)");
+    right.addColorStop(1, "rgba(0,0,0,0.5)");
+    this.ctx.fillStyle = right;
+    this.ctx.fillRect(offsetX + this.boardWidth - WALL_WIDTH, offsetY, WALL_WIDTH, this.boardHeight);
+
+    const bottom = this.ctx.createLinearGradient(0, offsetY + this.boardHeight - WALL_WIDTH, 0, offsetY + this.boardHeight);
+    bottom.addColorStop(0, "rgba(0,0,0,0)");
+    bottom.addColorStop(1, "rgba(0,0,0,0.55)");
+    this.ctx.fillStyle = bottom;
+    this.ctx.fillRect(offsetX, offsetY + this.boardHeight - WALL_WIDTH, this.boardWidth, WALL_WIDTH);
+  }
+
   drawPiece(piece: Piece, offsetX: number, offsetY: number): void {
     const color = PIECE_COLORS[piece.type];
     for (const { x, y } of piece.getBlocks()) {
@@ -82,6 +172,23 @@ export class Renderer {
         CELL_SIZE,
         color
       );
+    }
+  }
+
+  /** Very subtle landing shadow under the active piece's impact columns (in addition to the ghost piece). */
+  drawDropShadow(piece: Piece, ghostY: number, offsetX: number, offsetY: number): void {
+    const bottomRowByCol = new Map<number, number>();
+    for (const b of piece.getBlocks()) {
+      const y = b.y - piece.pos.y + ghostY;
+      bottomRowByCol.set(b.x, Math.max(bottomRowByCol.get(b.x) ?? -Infinity, y));
+    }
+    this.ctx.fillStyle = "rgba(0,0,0,0.25)";
+    for (const [col, row] of bottomRowByCol) {
+      const cx = offsetX + col * CELL_SIZE + CELL_SIZE / 2;
+      const cy = offsetY + (row + 1) * CELL_SIZE - 2;
+      this.ctx.beginPath();
+      this.ctx.ellipse(cx, cy, CELL_SIZE * 0.42, 3.5, 0, 0, Math.PI * 2);
+      this.ctx.fill();
     }
   }
 
@@ -321,14 +428,12 @@ export class Renderer {
   }
 
   private drawCell(x: number, y: number, size: number, color: string): void {
-    this.ctx.shadowBlur = 6;
-    this.ctx.shadowColor = color;
-    this.ctx.fillStyle = color;
-    this.ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
-    this.ctx.shadowBlur = 0;
-    this.ctx.shadowColor = "transparent";
-    this.ctx.fillStyle = "rgba(255,255,255,0.15)";
-    this.ctx.fillRect(x + 1, y + 1, size - 2, 2);
-    this.ctx.fillRect(x + 1, y + 1, 2, size - 2);
+    const key = `${size}|${color}`;
+    let sprite = cellSpriteCache.get(key);
+    if (!sprite) {
+      sprite = bakeCellSprite(size, color);
+      cellSpriteCache.set(key, sprite);
+    }
+    this.ctx.drawImage(sprite, x - SPRITE_PAD, y - SPRITE_PAD);
   }
 }

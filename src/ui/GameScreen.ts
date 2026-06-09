@@ -436,6 +436,7 @@ export class GameScreen {
     this.renderer.drawBoard(this.engine.board.grid, BOARD_OFFSET_X, BOARD_OFFSET_Y, this.engine.level, this.engine.baseHue);
 
     const ghostY = this.engine.board.getGhostY(this.engine.currentPiece);
+    this.renderer.drawDropShadow(this.engine.currentPiece, ghostY, BOARD_OFFSET_X, BOARD_OFFSET_Y);
     this.renderer.drawGhost(this.engine.currentPiece, ghostY, BOARD_OFFSET_X, BOARD_OFFSET_Y);
 
     this.renderer.drawPiece(this.engine.currentPiece, BOARD_OFFSET_X, BOARD_OFFSET_Y);
